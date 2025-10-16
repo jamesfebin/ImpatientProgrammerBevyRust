@@ -1,94 +1,913 @@
-bevy_book_game (workspace root: /Users/febinjohnjames/AIBodh/bevy_book_game)
-======================================================================
+# BEVY 0.17 PROJECT CONTEXT - Chapter 2 Game
+## Date Created: October 16, 2025
 
-Project Overview
-----------------
-- Rust crate `chapter2`; targets Bevy 0.17.2 with `bevy_procedural_tilemaps` 0.1.3.
-- Entry point (`src/main.rs`) configures `App::new()` with:
-  * `ClearColor` = white and `DefaultPlugins` customized:
-    - `AssetPlugin` rooted at `src/assets`.
-    - `WindowPlugin` primary window sized from map pixel dimensions, non-resizable.
-    - `ImagePlugin::default_nearest()` to avoid sprite blur.
-  * `ProcGenSimplePlugin::<Cartesian3D, Sprite>` to drive procedural tilemap WFC.
-  * Startup systems: `setup_camera` (spawns `Camera2d`) and `map::generate::setup_generator`.
-  * `PlayerPlugin` for movement + animation.
-  * `collision` module defines reusable `Collider` component applied to map assets.
+This file contains comprehensive context about the bevy_book_game project and Bevy 0.17 API changes. 
+Read this file completely when resuming work on this project in future conversations.
 
-Map Generation Module (`src/map`)
----------------------------------
-- Submodules: `assets`, `generate`, `models`, `rules`, `sockets`, `tilemap`.
-- `generate.rs`
-  * Configurable grid constants (`GRID_X`, `GRID_Y`, `GRID_Z`, `TILE_SIZE`, etc.).
-  * `map_pixel_dimensions()` derives window size.
-  * `setup_generator()`:
-    - Builds terrain sockets + models via `rules::build_world()`.
-    - Creates `RulesBuilder::new_cartesian_3d` with `Direction::ZForward`.
-    - Configures `GeneratorBuilder` with random seed RNG, MRV heuristic, weighted model selection.
-    - Loads atlas via `assets::prepare_tilemap_handles` and `load_assets`.
-    - Spawns entity bundling `Transform` (centered), `CartesianGrid`, `Generator`, and `NodesSpawner`.
-- `assets.rs`
-  * Defines `SpawnableAsset`, optional `GridDelta` / world offsets, and component hook.
-  * `with_world_offset(Vec3)` lets us elevate sprites (tree canopies) for proper layering.
-  * `TilemapHandles` wraps atlas image + layout; `sprite()` builds `Sprite::from_atlas_image`.
-  * `prepare_tilemap_handles()` loads atlas image from `src/assets/tile_layers/tilemap.png`, builds `TextureAtlasLayout` from static metadata.
-  * `load_assets()` registers `ModelAsset<Sprite>` per model ID using map definition.
-- `models.rs`
-  * `TerrainModelBuilder` ensures `ModelCollection<Cartesian3D>` stays aligned with asset lists; `create_model()` stores assets + returns mutable model ref.
-- `rules.rs`
-  * Layer builders (dirt, grass, yellow grass, water, props) add rotated variants and connection rules using sockets.
-  * Water tiles plus solid props (tree bases, rocks, stumps) attach `Collider` components; canopy sprites lift by `Vec3::new(0., 0., 0.75)` so player can pass “behind” foliage while bases stay blocking.
-  * `build_world()` orchestrates socket creation, model definition, and returns `(Vec<Vec<SpawnableAsset>>, ModelCollection, SocketCollection)`.
-- `sockets.rs`
-  * `TerrainSockets` struct organizes socket IDs (material, layer up/down, special combos).
-  * `create_sockets()` populates via closure capturing `SocketCollection::create()`.
-- `tilemap.rs`
-  * Static `TILEMAP` definition enumerating sprite names with pixel offsets; provides atlas sizing helpers.
+================================================================================
+## PROJECT OVERVIEW
+================================================================================
 
-Player Module (`src/player`)
-----------------------------
-- `components.rs`
-  * Constants: `TILE_SIZE` (64), `WALK_FRAMES` (9), `MOVE_SPEED` (140), `ANIM_DT` (0.1), `PLAYER_COLLIDER_HALF` (Vec2::new(12, 12)).
-  * Components: marker `Player`, `Facing` enum, `AnimationTimer(Timer)`, `AnimationState` (tracks `facing`, `moving`, `was_moving`).
-  * `AnimationClip` encodes `first/last` frame indices; `DirectionalClips::walk()` maps each `Facing` to clip rows (rows 8-11 in sprite sheet).
-- `systems.rs`
-  * `spawn_player()` loads `male_spritesheet.png`, builds atlas layout grid (`TextureAtlasLayout::from_grid`), spawns sprite with scale 0.8, and positions depth via `player_depth_from_y`.
-  * `move_player()` reads `ButtonInput<KeyCode>` (arrow keys), resolves collisions against world `Collider`s with axis-separated tests, and recomputes depth via `player_depth_from_y`.
-  * `animate_player()` keeps atlas index within active clip, advances frames while moving, resets on stop/start transitions.
-  * `PlayerPlugin` wires startup spawn system + update systems tuple `(move_player, animate_player)`.
-- Assets directory includes `male_spritesheet.png`, `female_spritesheet.png`, and tile atlas under `src/assets/tile_layers`.
+### Project Structure
+- Location: /Users/febinjohnjames/AIBodh/bevy_book_game
+- Cargo.toml: Project named "chapter2", edition "2024", Bevy 0.17.2
+- Dependencies:
+  * bevy = "0.17.2"
+  * bevy_procedural_tilemaps = "0.1.3"
+- Git Branch: chapter3_v0.1
 
-Bevy 0.17 API Observations (from project + examples)
-----------------------------------------------------
-- Plugin setup uses tuple syntax: `.add_plugins((DefaultPlugins, ExampleCommonPlugin, ...))` or `.add_plugins(DefaultPlugins.set(...))`.
-- Systems added via schedule-specific `.add_systems(Startup, system_fn)` and `.add_systems(Update, (a, b))`.
-- Components spawned with inline bundles: `commands.spawn((Sprite { ... }, Transform::default(), ...))`.
-- `Camera2d` replaces `Camera2dBundle::default()`.
-- Input handling uses `Res<ButtonInput<KeyCode>>` and `just_pressed`, `pressed`.
-- `Sprite::from_atlas_image` + `TextureAtlas { layout, index }` pattern replaces older bundle constructors.
-- UI/text API uses `Text::new`, `TextSpan`, `Node` with CSS-like positioning; `TextFont`, `TextColor`, `TextLayout`.
-- Examples show new query utilities: `Single<...>` for unique components, message system (`MessageWriter`, `MessageReader`) for input events.
-- Physics (avian2d) integrates via `PhysicsPlugins::default()` and schedules (`FixedUpdate`) for deterministic stepping.
+### Module Organization
+1. **main.rs** - Entry point, app setup
+2. **player/** - Player character system
+   - mod.rs - Module exports
+   - components.rs - Player components (constants, enums, structs)
+   - systems.rs - Player plugin with spawn, movement, animation systems
+3. **map/** - Procedural map generation using Wave Function Collapse
+   - mod.rs - Module exports
+   - generate.rs - WFC generator setup, map dimensions
+   - models.rs - TerrainModelBuilder for tile models
+   - rules.rs - Layer building functions (dirt, grass, yellow grass, water, props)
+   - sockets.rs - Socket definitions for tile connections
+   - assets.rs - Asset loading and sprite handling
+   - tilemap.rs - Tilemap sprite definitions (TILEMAP constant)
 
-External Example References
----------------------------
-- `avian/crates/avian2d/examples/*`: illustrate physics plugins, message-based controller patterns, new CCD toggles (`Single` queries), modular plugin organization.
-- `bevy/examples/*`: confirm sprite animation pattern (`AnimationIndices`, `AnimationTimer`), text UI updates, minimal `hello_world.rs` using `.add_systems(Update, system)`.
+### Current Features
+- Procedural 2D top-down tilemap generation (25x18 grid, 32px tiles)
+- 5 layer system: dirt, grass, yellow grass, water, props
+- Animated player character with directional sprites (up, left, down, right)
+- Movement system with arrow keys (140.0 px/s)
+- Sprite sheet animation (9 walk frames per direction, 0.1s per frame)
+- Camera: 2D orthographic, centered at origin
 
-Usage Notes / How to Reload Context
------------------------------------
-- Re-run `cat context.txt` from project root to reload this memo.
-- If CLI session resets, revisit:
-  * Project layout via `ls src`, `cargo metadata --no-deps`.
-  * Player systems/components in `src/player`.
-  * Map generation flow in `src/map/{generate,rules}.rs`.
-  * External examples under `/Users/febinjohnjames/AIBodh/avian/crates/avian2d/examples` and `/Users/febinjohnjames/AIBodh/bevy/examples`.
-- Remember assets live under `src/assets`; window size tied to `map::generate::map_pixel_dimensions()`.
-- Procedural generation uses `bevy_procedural_tilemaps` WFC pipeline with z-stacked layers; sockets ensure compatibility across layers.
+### Game Window
+- Size: 800x576 pixels (GRID_X=25 * TILE_SIZE=32, GRID_Y=18 * TILE_SIZE=32)
+- Non-resizable
+- Custom asset path: "src/assets"
+- Clear color: White
+- Nearest neighbor filtering for pixel art
 
-Outstanding Notes
------------------
-- `ProcGenSimplePlugin::<Cartesian3D, Sprite>` is active; adjustments may need matching generic parameters if assets change.
-- Timers: `AnimationTimer(Timer::from_seconds(ANIM_DT, TimerMode::Repeating))`; pausing animations requires toggling `anim.moving`.
-- Player/world collision uses AABB checks; `ColliderKind` is available for differing behaviors (water vs solid) if needed later.
-- Player depth derives from nearest tile row (`ground_z + 0.25`), while tree canopies carry +0.75 world z offset to stay in front.
-- Window resolution derived from `GRID_X`, `GRID_Y`, `TILE_SIZE`; changes cascade to player/world coordinate expectations.
+================================================================================
+## BEVY 0.17 API CHANGES - CRITICAL INFORMATION
+================================================================================
+
+### 1. CAMERA SYSTEM CHANGES (MOST IMPORTANT)
+
+**OLD (Pre-0.17):**
+```rust
+commands.spawn(Camera2dBundle::default());
+// or
+commands.spawn((Camera2d::default(), ...));
+```
+
+**NEW (0.17):**
+```rust
+commands.spawn(Camera2d);
+// Camera2d is now a marker component, not a bundle!
+```
+
+**Key Points:**
+- Camera2dBundle no longer exists
+- Camera2d is now just a marker component
+- No need for Transform or other components - they're added automatically
+- Simpler and more ergonomic API
+
+### 2. SPRITE RENDERING CHANGES
+
+#### Sprite Creation
+
+**Basic Sprite (OLD):**
+```rust
+SpriteBundle {
+    texture: image_handle,
+    transform: Transform::from_xyz(...),
+    ..default()
+}
+```
+
+**Basic Sprite (NEW):**
+```rust
+(
+    Sprite::from_image(image_handle),
+    Transform::from_xyz(...),
+)
+// Or for colored sprites:
+Sprite {
+    color: Color::srgb(r, g, b),
+    custom_size: Some(Vec2::new(width, height)),
+    ..default()
+}
+```
+
+#### Texture Atlas / Sprite Sheet
+
+**OLD:**
+```rust
+SpriteSheetBundle {
+    texture: atlas_image,
+    atlas: TextureAtlas {
+        layout: atlas_layout_handle,
+        index: 0,
+    },
+    transform: Transform::default(),
+    ..default()
+}
+```
+
+**NEW (Current Project Pattern):**
+```rust
+Sprite::from_atlas_image(
+    texture_handle,
+    TextureAtlas {
+        layout: atlas_layout_handle,
+        index: frame_index,
+    },
+)
+```
+
+**Alternative NEW Pattern (Separate Components):**
+```rust
+(
+    Sprite {
+        image: texture_handle.clone(),
+        texture_atlas: Some(TextureAtlas {
+            layout: atlas_layout_handle,
+            index: 0,
+        }),
+        ..default()
+    },
+    Transform::from_scale(Vec3::splat(6.0)),
+)
+```
+
+**Key Points:**
+- Bundles are deprecated - use component tuples instead
+- Sprite is now a required component for rendering
+- TextureAtlas is now an optional field inside Sprite
+- Use Sprite::from_atlas_image() for convenience
+- Can access atlas via sprite.texture_atlas (returns Option<TextureAtlas>)
+
+#### Animating Sprite Sheets in 0.17
+
+```rust
+// In animation system:
+fn animate(time: Res<Time>, mut query: Query<(&mut Sprite, &AnimationTimer)>) {
+    for (mut sprite, timer) in &mut query {
+        timer.tick(time.delta());
+        
+        if timer.just_finished() 
+            && let Some(atlas) = &mut sprite.texture_atlas 
+        {
+            atlas.index = (atlas.index + 1) % total_frames;
+        }
+    }
+}
+```
+
+**Key Pattern:**
+- Check `sprite.texture_atlas` with if-let to get mutable reference
+- Modify `atlas.index` to change displayed frame
+- Atlas is Option<TextureAtlas>, not a separate component
+
+### 3. MESH 2D RENDERING
+
+**OLD:**
+```rust
+MaterialMesh2dBundle {
+    mesh: meshes.add(shape).into(),
+    material: materials.add(color),
+    transform: Transform::default(),
+    ..default()
+}
+```
+
+**NEW:**
+```rust
+(
+    Mesh2d(meshes.add(Capsule2d::new(12.5, 20.0))),
+    MeshMaterial2d(materials.add(Color::srgb(0.2, 0.7, 0.9))),
+    Transform::from_xyz(0.0, -100.0, 0.0),
+)
+```
+
+**Key Points:**
+- Mesh2d and MeshMaterial2d are newtype wrappers
+- No more bundles - use component tuples
+- Material and mesh are separate components
+
+### 4. COLOR API CHANGES
+
+**OLD:**
+```rust
+Color::rgb(r, g, b)  // Values 0.0-1.0
+Color::rgba(r, g, b, a)
+```
+
+**NEW:**
+```rust
+Color::srgb(r, g, b)  // sRGB color space, values 0.0-1.0
+Color::srgba(r, g, b, a)
+Color::WHITE  // Constants use sRGB
+```
+
+**Key Points:**
+- Default color space is now sRGB
+- More accurate color representation
+- Methods renamed: rgb -> srgb, rgba -> srgba
+
+### 5. TEXT AND UI CHANGES
+
+**Text Components (NEW):**
+```rust
+// 2D Text
+(
+    Text2d::new("Hello"),
+    TextFont {
+        font: font_handle,
+        font_size: 42.0,
+        ..default()
+    },
+    Transform::from_xyz(x, y, z),
+)
+
+// UI Text
+(
+    Text::new("Hello"),
+    Node {
+        position_type: PositionType::Absolute,
+        top: px(12),
+        left: px(12),
+        ..default()
+    },
+)
+```
+
+**Key Points:**
+- TextBundle replaced with Text component
+- Text2d for world-space text
+- TextFont for font styling
+- Node for UI layout
+
+### 6. INPUT HANDLING (Unchanged but important)
+
+**Keyboard:**
+```rust
+fn input_system(keyboard: Res<ButtonInput<KeyCode>>) {
+    if keyboard.pressed(KeyCode::ArrowLeft) { }
+    if keyboard.just_pressed(KeyCode::Space) { }
+    if keyboard.just_released(KeyCode::KeyA) { }
+}
+```
+
+**Note:** KeyCode enum uses format like KeyCode::KeyA (not just KeyCode::A)
+
+### 7. TIME API (Unchanged)
+
+```rust
+fn system(time: Res<Time>) {
+    let delta = time.delta();         // Duration
+    let delta_secs = time.delta_secs(); // f32
+    
+    // For timers:
+    timer.tick(time.delta());
+    if timer.just_finished() { }
+}
+```
+
+### 8. QUERY PATTERNS (Enhanced)
+
+```rust
+// Single entity query (NEW convenience method)
+let Ok((mut transform, velocity)) = query.single_mut() else {
+    return;
+};
+
+// Optional components with Has<T>
+fn system(query: Query<(&Transform, Has<Grounded>)>) {
+    for (transform, is_grounded) in &query {
+        if is_grounded { } // is_grounded is bool
+    }
+}
+
+// Mutable references
+for (mut sprite, &index) in &mut query { }
+```
+
+### 9. MESSAGE SYSTEM (NEW - Replaces Events in some cases)
+
+**Used in Avian Physics Examples:**
+```rust
+// Define message
+#[derive(Message)]
+pub enum MovementAction {
+    Move(f32),
+    Jump,
+}
+
+// In plugin:
+app.add_message::<MovementAction>()
+
+// Write messages:
+fn writer_system(mut writer: MessageWriter<MovementAction>) {
+    writer.write(MovementAction::Jump);
+}
+
+// Read messages:
+fn reader_system(mut reader: MessageReader<MovementAction>) {
+    for event in reader.read() {
+        match event {
+            MovementAction::Move(dir) => {},
+            MovementAction::Jump => {},
+        }
+    }
+}
+```
+
+**Key Points:**
+- More efficient than events for some use cases
+- Used in Avian physics examples for input
+- Can be alternative to EventReader/EventWriter
+
+================================================================================
+## CURRENT PROJECT CODE PATTERNS
+================================================================================
+
+### Player Animation System (Working Pattern)
+
+```rust
+// From player/systems.rs lines 93-139
+fn animate_player(
+    time: Res<Time>,
+    mut query: Query<
+        (
+            &DirectionalClips,
+            &mut AnimationState,
+            &mut AnimationTimer,
+            &mut Sprite,
+        ),
+        With<Player>,
+    >,
+) {
+    let Ok((clips, mut anim, mut timer, mut sprite)) = query.single_mut() else {
+        return;
+    };
+
+    // Access texture atlas from sprite
+    let atlas = match sprite.texture_atlas.as_mut() {
+        Some(atlas) => atlas,
+        None => return,
+    };
+
+    // Animation logic
+    let clip = clips.clip(anim.facing);
+    if !clip.contains(atlas.index) {
+        atlas.index = clip.start();
+        timer.reset();
+    }
+
+    // State machine for animation
+    let just_started = anim.moving && !anim.was_moving;
+    let just_stopped = !anim.moving && anim.was_moving;
+
+    if anim.moving {
+        if just_started {
+            atlas.index = clip.next(clip.start());
+            timer.reset();
+        } else {
+            timer.tick(time.delta());
+            if timer.just_finished() {
+                atlas.index = clip.next(atlas.index);
+            }
+        }
+    } else if just_stopped {
+        atlas.index = clip.start();
+        timer.reset();
+    }
+
+    anim.was_moving = anim.moving;
+}
+```
+
+**Key Takeaways:**
+- Use `sprite.texture_atlas.as_mut()` to get mutable reference
+- Check if texture_atlas is Some before accessing
+- State machine pattern for start/stop animations
+- Reset to first frame when stopping
+
+### Player Spawning (Working Pattern)
+
+```rust
+// From player/systems.rs lines 8-44
+fn spawn_player(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+) {
+    let texture = asset_server.load("male_spritesheet.png");
+    let layout = atlas_layouts.add(TextureAtlasLayout::from_grid(
+        UVec2::splat(TILE_SIZE),  // 64x64 tiles
+        WALK_FRAMES as u32,        // 9 columns
+        12,                        // 12 rows
+        None,                      // no padding
+        None,                      // no offset
+    ));
+
+    let facing = Facing::Down;
+    let directional_clips = DirectionalClips::walk(WALK_FRAMES);
+    let start_index = directional_clips.clip(facing).start();
+
+    commands.spawn((
+        Sprite::from_atlas_image(
+            texture,
+            TextureAtlas {
+                layout,
+                index: start_index,
+            },
+        ),
+        Transform::from_translation(Vec3::new(0., 0., PLAYER_Z))
+            .with_scale(Vec3::splat(0.8)),
+        Player,
+        directional_clips,
+        AnimationState {
+            facing,
+            moving: false,
+            was_moving: false,
+        },
+        AnimationTimer(Timer::from_seconds(ANIM_DT, TimerMode::Repeating)),
+    ));
+}
+```
+
+### Map Generation (Working Pattern with bevy_procedural_tilemaps)
+
+```rust
+// From map/generate.rs
+pub fn setup_generator(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+) {
+    // 1. Build rules and models for WFC
+    let (assets_definitions, models, socket_collection) = build_world();
+
+    let rules = RulesBuilder::new_cartesian_3d(models, socket_collection)
+        .with_rotation_axis(Direction::ZForward)
+        .build()
+        .unwrap();
+
+    // 2. Create grid
+    let grid = CartesianGrid::new_cartesian_3d(
+        GRID_X, GRID_Y, GRID_Z,
+        false, false, false  // no wrapping
+    );
+
+    // 3. Configure generator
+    let generator = GeneratorBuilder::new()
+        .with_rules(rules)
+        .with_grid(grid.clone())
+        .with_rng(RngMode::RandomSeed)
+        .with_node_heuristic(NodeSelectionHeuristic::MinimumRemainingValue)
+        .with_model_heuristic(ModelSelectionHeuristic::WeightedProbability)
+        .build()
+        .unwrap();
+
+    // 4. Load tilemap atlas
+    let tilemap_handles = prepare_tilemap_handles(
+        &asset_server,
+        &mut atlas_layouts,
+        ASSETS_PATH,
+        TILEMAP_FILE,
+    );
+    let models_assets = load_assets(&tilemap_handles, assets_definitions);
+
+    // 5. Spawn generator entity
+    commands.spawn((
+        Transform::from_translation(Vec3 {
+            x: -TILE_SIZE * grid.size_x() as f32 / 2.,
+            y: -TILE_SIZE * grid.size_y() as f32 / 2.,
+            z: 0.,
+        }),
+        grid,
+        generator,
+        NodesSpawner::new(models_assets, NODE_SIZE, ASSETS_SCALE)
+            .with_z_offset_from_y(true),
+    ));
+}
+```
+
+================================================================================
+## AVIAN2D PHYSICS ENGINE PATTERNS (For Future Physics Integration)
+================================================================================
+
+### Basic Physics Setup
+
+```rust
+use avian2d::prelude::*;
+
+// In main app setup:
+App::new()
+    .add_plugins((
+        DefaultPlugins,
+        PhysicsPlugins::default().with_length_unit(20.0), // 1 meter = 20 pixels
+    ))
+    .insert_resource(Gravity(Vector::NEG_Y * 1000.0))
+    .run();
+```
+
+### Rigid Body Types
+
+```rust
+// Static (immovable, for ground/walls)
+(
+    Sprite { ... },
+    Transform::from_xyz(...),
+    RigidBody::Static,
+    Collider::rectangle(width, height),
+)
+
+// Dynamic (affected by forces)
+(
+    Sprite { ... },
+    Transform::from_xyz(...),
+    RigidBody::Dynamic,
+    Collider::rectangle(width, height),
+    ColliderDensity(2.0),  // optional
+)
+
+// Kinematic (controlled by code)
+(
+    Sprite { ... },
+    Transform::from_xyz(...),
+    RigidBody::Kinematic,
+    Collider::capsule(radius, length),
+    LinearVelocity(Vec2::ZERO),  // control manually
+)
+```
+
+### Collider Shapes
+
+```rust
+Collider::rectangle(width, height)
+Collider::circle(radius)
+Collider::capsule(radius, length)
+Collider::triangle(point1, point2, point3)
+```
+
+### Collision Layers (For selective collision)
+
+```rust
+#[derive(PhysicsLayer, Default)]
+enum Layer {
+    #[default]
+    Default,
+    Player,
+    Enemy,
+    Terrain,
+}
+
+// Entity with collision layers
+(
+    RigidBody::Dynamic,
+    Collider::circle(10.0),
+    CollisionLayers::new(
+        [Layer::Player],        // This entity belongs to Player layer
+        [Layer::Terrain, Layer::Enemy],  // It collides with these layers
+    ),
+)
+```
+
+### Character Controller Pattern (Kinematic)
+
+```rust
+// Ground detection with shape caster
+ShapeCaster::new(collider.clone(), Vector::ZERO, 0.0, Dir2::NEG_Y)
+    .with_max_distance(10.0)
+
+// Movement with velocity
+fn move_character(
+    mut query: Query<&mut LinearVelocity, With<Player>>,
+    input: Res<ButtonInput<KeyCode>>,
+    time: Res<Time>,
+) {
+    for mut velocity in &mut query {
+        let mut direction = Vec2::ZERO;
+        if input.pressed(KeyCode::ArrowLeft) { direction.x -= 1.0; }
+        if input.pressed(KeyCode::ArrowRight) { direction.x += 1.0; }
+        
+        velocity.x += direction.x * ACCELERATION * time.delta_secs();
+    }
+}
+```
+
+### Important Avian Components
+
+- `RigidBody` - Body type (Static/Dynamic/Kinematic)
+- `Collider` - Collision shape
+- `LinearVelocity` - Movement velocity
+- `AngularVelocity` - Rotation velocity
+- `Position` - Physics position (synced with Transform)
+- `Rotation` - Physics rotation
+- `CollisionLayers` - What layers entity belongs to and collides with
+- `Friction` - Surface friction
+- `Restitution` - Bounciness
+- `GravityScale` - Multiplier for global gravity
+- `LockedAxes` - Lock rotation or translation on certain axes
+- `Sensor` - Collider that detects collisions but doesn't cause physical response
+
+### Shape Casting (Raycasting)
+
+```rust
+// Cast a shape to detect ground
+#[derive(Component)]
+struct GroundCaster;
+
+// Setup
+commands.spawn((
+    ShapeCaster::new(
+        Collider::circle(10.0),  // shape to cast
+        Vec2::ZERO,              // starting offset
+        0.0,                     // initial rotation
+        Dir2::NEG_Y,            // direction
+    )
+    .with_max_distance(5.0),
+    GroundCaster,
+));
+
+// Check hits
+fn check_ground(query: Query<&ShapeHits, With<GroundCaster>>) {
+    for hits in &query {
+        for hit in hits.iter() {
+            println!("Hit at distance: {}", hit.time_of_impact);
+        }
+    }
+}
+```
+
+================================================================================
+## IMPORTANT CONSTANTS AND CONFIGURATIONS
+================================================================================
+
+### Player Constants (from player/components.rs)
+```rust
+pub const TILE_SIZE: u32 = 64;          // Player sprite tile size
+pub const WALK_FRAMES: usize = 9;       // Frames per walk animation
+pub const MOVE_SPEED: f32 = 140.0;      // Pixels per second
+pub const ANIM_DT: f32 = 0.1;          // Animation frame duration
+pub const PLAYER_Z: f32 = 20.0;        // Z-layer for rendering order
+```
+
+### Map Constants (from map/generate.rs)
+```rust
+pub const GRID_X: u32 = 25;            // Map width in tiles
+pub const GRID_Y: u32 = 18;            // Map height in tiles
+pub const TILE_SIZE: f32 = 32.;        // Map tile size
+const GRID_Z: u32 = 5;                 // Number of layers
+```
+
+### Player Sprite Sheet Layout
+- File: "male_spritesheet.png" (or "female_spritesheet.png")
+- Grid: 9 columns × 12 rows
+- Tile size: 64×64 pixels
+- Walk animation rows (0-indexed):
+  * Row 8: Up
+  * Row 9: Left  
+  * Row 10: Down
+  * Row 11: Right
+- Each row has 9 frames (frame 0 is idle, frames 1-8 are walk cycle)
+
+### Tilemap Layout
+- File: "src/assets/tile_layers/tilemap.png"
+- Atlas size: 256×320 pixels
+- Tile size: 32×32 pixels
+- Contains 60+ terrain and prop sprites
+- See tilemap.rs for complete sprite definitions
+
+================================================================================
+## COMMON PITFALLS AND SOLUTIONS
+================================================================================
+
+### Pitfall 1: Using Old Bundle Patterns
+**Wrong:**
+```rust
+commands.spawn(Camera2dBundle::default());
+commands.spawn(SpriteBundle { ... });
+```
+
+**Right:**
+```rust
+commands.spawn(Camera2d);
+commands.spawn((Sprite::from_image(image), Transform::default()));
+```
+
+### Pitfall 2: Accessing TextureAtlas as Separate Component
+**Wrong:**
+```rust
+fn system(mut query: Query<(&mut TextureAtlas, &mut Sprite)>) { }
+```
+
+**Right:**
+```rust
+fn system(mut query: Query<&mut Sprite>) {
+    for mut sprite in &mut query {
+        if let Some(atlas) = &mut sprite.texture_atlas {
+            atlas.index = new_index;
+        }
+    }
+}
+```
+
+### Pitfall 3: Using Old Color Methods
+**Wrong:**
+```rust
+Color::rgb(1.0, 0.0, 0.0)
+```
+
+**Right:**
+```rust
+Color::srgb(1.0, 0.0, 0.0)
+```
+
+### Pitfall 4: Forgetting to Check texture_atlas is Some
+**Wrong:**
+```rust
+sprite.texture_atlas.index = 5;  // Will panic if None
+```
+
+**Right:**
+```rust
+if let Some(atlas) = &mut sprite.texture_atlas {
+    atlas.index = 5;
+}
+// Or with match:
+let Some(atlas) = &mut sprite.texture_atlas else { return };
+```
+
+### Pitfall 5: Not Using Single Query Properly
+**Wrong:**
+```rust
+let Ok(result) = query.single_mut();  // Panics on None
+```
+
+**Right:**
+```rust
+let Ok(result) = query.single_mut() else {
+    return;  // Early return if no entity found
+};
+```
+
+================================================================================
+## DIRECTORY STRUCTURE
+================================================================================
+
+```
+bevy_book_game/
+├── Cargo.toml                    # Project manifest
+├── Cargo.lock                    # Dependency lock file
+├── context.txt                   # This file
+├── src/
+│   ├── main.rs                   # App entry point
+│   ├── player/
+│   │   ├── mod.rs               # Module exports
+│   │   ├── components.rs        # Player data structures
+│   │   └── systems.rs           # Player logic and plugin
+│   ├── map/
+│   │   ├── mod.rs               # Module exports
+│   │   ├── generate.rs          # Generator setup
+│   │   ├── models.rs            # Model builder
+│   │   ├── rules.rs             # Layer definitions
+│   │   ├── sockets.rs           # Socket definitions
+│   │   ├── assets.rs            # Asset loading
+│   │   └── tilemap.rs           # Sprite definitions
+│   └── assets/
+│       ├── male_spritesheet.png
+│       ├── female_spritesheet.png
+│       └── tile_layers/
+│           └── tilemap.png
+└── target/                       # Build output (ignored)
+```
+
+================================================================================
+## EXTERNAL RESOURCES STUDIED
+================================================================================
+
+### Avian2D Examples Location
+- Path: /Users/febinjohnjames/AIBodh/avian/crates/avian2d/examples/
+- Key examples reviewed:
+  * kinematic_character_2d/ - Kinematic physics character controller
+  * dynamic_character_2d/ - Dynamic physics character controller  
+  * collision_layers.rs - Collision layer system
+
+### Bevy Examples Location
+- Path: /Users/febinjohnjames/AIBodh/bevy/examples/
+- Key examples reviewed:
+  * 2d/sprite_animation.rs - Event-triggered animation
+  * 2d/sprite_sheet.rs - Looping sprite sheet animation
+  * 2d/texture_atlas.rs - Atlas creation from folder
+  * 2d/move_sprite.rs - Basic sprite movement
+  * input/keyboard_input.rs - Keyboard handling
+
+================================================================================
+## NEXT STEPS / POTENTIAL ADDITIONS
+================================================================================
+
+### Physics Integration (Chapter 3?)
+1. Add Avian2D physics plugin
+2. Replace manual Transform movement with physics-based movement
+3. Add collision detection for terrain
+4. Implement character controller with ground detection
+5. Add collision layers for player, terrain, props
+
+### Suggested Implementation:
+```rust
+// In Cargo.toml
+avian2d = "0.2"
+
+// In main.rs
+use avian2d::prelude::*;
+
+App::new()
+    .add_plugins(PhysicsPlugins::default().with_length_unit(20.0))
+    .insert_resource(Gravity(Vector::NEG_Y * 1000.0))
+    // ...
+
+// In player spawning
+commands.spawn((
+    Sprite::from_atlas_image(...),
+    Transform::from_translation(...),
+    RigidBody::Kinematic,
+    Collider::capsule(20.0, 40.0),
+    ShapeCaster::new(...),  // For ground detection
+    Player,
+    // ... other components
+));
+```
+
+### Camera Follow System
+```rust
+fn follow_player(
+    player: Query<&Transform, With<Player>>,
+    mut camera: Query<&mut Transform, (With<Camera2d>, Without<Player>)>,
+) {
+    let Ok(player_transform) = player.single() else { return };
+    let Ok(mut camera_transform) = camera.single_mut() else { return };
+    
+    // Smooth follow or direct follow
+    camera_transform.translation = player_transform.translation;
+    camera_transform.translation.z = 999.0;  // Keep camera above everything
+}
+```
+
+### Additional Features to Consider
+- Collision detection for map obstacles
+- Animation state machine improvements
+- Different player speeds (walk/run)
+- Idle animations
+- Attack/interact animations
+- Sound effects
+- Particle effects
+- UI/HUD system
+- Inventory system
+- NPCs with dialogue
+- Save/load system
+
+================================================================================
+## HOW TO USE THIS CONTEXT FILE
+================================================================================
+
+When resuming work on this project:
+
+1. **Read this file completely** - Don't skip sections
+2. **Check the date** at the top to know how old the information is
+3. **Verify API patterns** - If Bevy version changed, some patterns may be outdated
+4. **Review current code** - Compare patterns in this file with actual code
+5. **Update this file** - Add new learnings when you make changes
+6. **Use as reference** - Refer to code examples when implementing new features
+
+### Key Sections to Reference
+- **BEVY 0.17 API CHANGES** - Always check here first before writing code
+- **CURRENT PROJECT CODE PATTERNS** - Copy patterns from working code
+- **COMMON PITFALLS** - Avoid these mistakes
+- **AVIAN2D PHYSICS** - Reference when adding physics
+
+### When Context is Lost
+If you need to rebuild context in a new conversation:
+1. Read this file first
+2. Read main.rs to understand app structure
+3. Read player/systems.rs to see current animation/movement
+4. Read map/generate.rs to understand map generation
+5. Run the project to see current state
+6. Update this file with any new findings
+
+================================================================================
+## VERSION INFORMATION
+================================================================================
+
+- Rust Edition: 2024
+- Bevy Version: 0.17.2
+- bevy_procedural_tilemaps: 0.1.3
+- Project Phase: Chapter 2 complete, moving to Chapter 3
+- Last Git Branch: chapter3_v0.1
+
+================================================================================
+END OF CONTEXT FILE
+================================================================================
+
