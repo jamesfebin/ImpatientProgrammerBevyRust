@@ -32,7 +32,7 @@ fn spawn_player(
                 index: start_index,
             },
         ),
-        Transform::from_translation(Vec3::new(0., 0., PLAYER_Z)).with_scale(Vec3::splat(2.0)),
+        Transform::from_translation(Vec3::new(0., 0., PLAYER_Z)).with_scale(Vec3::splat(1.2)),
         Player,
         directional_clips,
         AnimationState {
