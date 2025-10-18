@@ -1,7 +1,9 @@
 mod camera;
 mod collision;
 mod map;
+mod performance;
 mod player;
+mod profiling;
 
 use bevy::{
     prelude::*,
@@ -15,12 +17,17 @@ use crate::player::PlayerPlugin;
 use crate::camera::{setup_camera, follow_camera, configure_camera_projection};
 use crate::camera::fog::{setup_fog_of_war, follow_fog, VisionRadius, CircularFogMaterial};
 use crate::camera::rendering::update_player_depth;
+use crate::profiling::init_profiling;
+use crate::performance::{PerformanceMonitor, monitor_performance};
 
 #[cfg(debug_assertions)]
 use crate::collision::{DebugCollisionEnabled, toggle_debug_collision, debug_draw_collision, debug_player_position, debug_log_tile_info};
 
 
 fn main() {
+    // Initialize profiling first
+    init_profiling();
+    
     let vision_radius = 320.0;
 
     let mut app = App::new();
@@ -41,14 +48,25 @@ fn main() {
                     }),
                     ..default()
                 })
-                .set(ImagePlugin::default_nearest()),
+                .set(ImagePlugin::default_nearest())
+                .disable::<bevy::log::LogPlugin>(), // Disable Bevy's logging to avoid conflict
             Material2dPlugin::<CircularFogMaterial>::default(),
             ProcGenSimplePlugin::<Cartesian3D, Sprite>::default(),
             PlayerPlugin,
         ))
         .init_resource::<CollisionMapBuilt>()
+        .init_resource::<PerformanceMonitor>()
         .add_systems(Startup, (setup_camera, setup_generator, setup_fog_of_war))
-        .add_systems(Update, (build_collision_map, follow_camera, follow_fog, update_player_depth, configure_camera_projection));
+        .add_systems(Update, (
+            // Performance monitoring (run first)
+            monitor_performance,
+            // Main game systems
+            build_collision_map, 
+            follow_camera, 
+            follow_fog, 
+            update_player_depth, 
+            configure_camera_projection
+        ));
 
     // Debug systems - only in debug builds
     #[cfg(debug_assertions)]

@@ -1,0 +1,23 @@
+warning: methods `get_fps` and `get_avg_frame_time` are never used
+  --> src/performance/mod.rs:55:12
+   |
+28 | impl PerformanceMonitor {
+   | ----------------------- methods in this implementation
+...
+55 |     pub fn get_fps(&self) -> f32 {
+   |            ^^^^^^^
+...
+59 |     pub fn get_avg_frame_time(&self) -> f32 {
+   |            ^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: function `log_system_performance` is never used
+  --> src/performance/mod.rs:77:8
+   |
+77 | pub fn log_system_performance(
+   |        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `chapter2` (bin "chapter2") generated 2 warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.30s
+     Running `target/debug/chapter2`

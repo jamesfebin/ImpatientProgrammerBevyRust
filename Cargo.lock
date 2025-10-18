@@ -1738,6 +1738,8 @@ dependencies = [
  "bevy",
  "bevy_procedural_tilemaps",
  "rand 0.8.5",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

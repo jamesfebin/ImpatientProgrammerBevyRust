@@ -7,3 +7,8 @@ edition = "2024"
 bevy = "0.17.2"
 bevy_procedural_tilemaps = "0.1.3"
 rand = "0.8"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+[features]
+default = []
