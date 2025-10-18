@@ -75,7 +75,7 @@ fn main() {
         ))
         .init_resource::<CollisionMapBuilt>()
         .add_systems(Startup, (setup_camera, setup_generator, setup_fog_of_war))
-        .add_systems(Update, (build_collision_map, follow_player_and_fog, update_player_depth, configure_camera_projection, debug_tile_depths));
+        .add_systems(Update, (build_collision_map, follow_player_and_fog, update_player_depth, configure_camera_projection, debug_tile_depths, debug_yellowgrass_tiles, debug_props_depth, debug_player_vs_props));
 
     // Debug systems - only in debug builds
     #[cfg(debug_assertions)]
@@ -96,44 +96,57 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn((Camera2d::default(), CameraFollow));
 }
 
-/// System to update player depth based on Y position to match tilemap Z system
-/// This mirrors the same Z-depth calculation that bevy_procedural_tilemaps uses
-/// with with_z_offset_from_y(true)
-fn update_player_depth(mut player_query: Query<&mut Transform, With<crate::player::Player>>) {
-    for mut transform in player_query.iter_mut() {
-        let player_y_world = transform.translation.y;
-        let old_z = transform.translation.z;
-        
-        // Map configuration (from generate.rs)
-        const TILE_SIZE: f32 = 64.0;
-        const GRID_Y: u32 = 18;
-        
-        // Based on debug output: tiles have Z range 0.556 to 5.444
-        // Let's use a similar range for the player
-        let map_height = TILE_SIZE * GRID_Y as f32;
-        let map_y0 = -TILE_SIZE * GRID_Y as f32 / 2.0; // Map origin Y (from generate.rs)
-        
-        // Normalize player Y to [0, 1] across the whole grid height
-        let t = ((player_y_world - map_y0) / map_height).clamp(0.0, 1.0);
-        
-        // Use a Z range similar to tiles (0.556 to 5.444) but slightly higher to draw in front
-        let min_z = 0.556;
-        let max_z = 5.444;
-        let player_z = min_z + (max_z - min_z) * (1.0 - t) + 0.1; // +0.1 to draw above tiles
-        
-        transform.translation.z = player_z;
-        
-        // Debug log every 60 frames (about once per second at 60fps)
-        static mut FRAME_COUNT: u32 = 0;
-        unsafe {
-            FRAME_COUNT += 1;
-            if FRAME_COUNT % 60 == 0 {
-                info!("🎮 Player depth debug - Y: {:.1}, Old Z: {:.3}, New Z: {:.3}, t: {:.3}, map_y0: {:.1}, map_height: {:.1}", 
-                      player_y_world, old_z, player_z, t, map_y0, map_height);
+        /// System to update player depth based on Y position to match tilemap Z system
+        /// This mirrors the same Z-depth calculation that bevy_procedural_tilemaps uses
+        /// with with_z_offset_from_y(true)
+        fn update_player_depth(mut player_query: Query<&mut Transform, With<crate::player::Player>>) {
+            for mut transform in player_query.iter_mut() {
+                let player_center_y = transform.translation.y;
+                let old_z = transform.translation.z;
+                
+                // Map configuration (from generate.rs)
+                const TILE_SIZE: f32 = 64.0;
+                const GRID_Y: u32 = 18;
+                
+                // CRITICAL FIX: Use player's FEET position for depth sorting, not center!
+                // The player sprite is anchored at center, but for proper depth sorting
+                // we need to consider where the player's feet are (bottom of sprite)
+                // Player scale is 1.2, so sprite height is TILE_SIZE * 1.2 = 76.8
+                // Feet are at: center_y - (sprite_height / 2) = center_y - 38.4
+                const PLAYER_SCALE: f32 = 1.2;
+                const PLAYER_SPRITE_HEIGHT: f32 = TILE_SIZE * PLAYER_SCALE; // 76.8
+                let player_feet_y = player_center_y - (PLAYER_SPRITE_HEIGHT / 2.0); // Bottom of player sprite
+                
+                let map_height = TILE_SIZE * GRID_Y as f32;
+                let map_y0 = -TILE_SIZE * GRID_Y as f32 / 2.0; // Map origin Y (from generate.rs)
+                
+                // Normalize player FEET Y to [0, 1] across the whole grid height
+                let t = ((player_feet_y - map_y0) / map_height).clamp(0.0, 1.0);
+                
+                // Use the Y-to-Z formula from bevy_procedural_tilemaps:
+                // z = base_z + NODE_SIZE.z * (1.0 - y / grid_height)
+                // Where NODE_SIZE.z = 1.0 and base_z varies by layer (1.0 for dirt, 3.0 for yellowgrass, etc)
+                // Props (trees, rocks) typically have base_z ≈ 4.0-5.0
+                // To ensure proper Y-sorting with props, we need to be in the SAME Z range as props
+                // but with a small offset to ensure consistent rendering order
+                const NODE_SIZE_Z: f32 = 1.0;
+                const PLAYER_BASE_Z: f32 = 4.0; // Match props base Z range for proper Y-sorting
+                const PLAYER_Z_OFFSET: f32 = 0.5; // Larger offset to ensure player is ALWAYS above props
+                let player_z = PLAYER_BASE_Z + NODE_SIZE_Z * (1.0 - t) + PLAYER_Z_OFFSET;
+                
+                transform.translation.z = player_z;
+                
+                // Debug log every 60 frames (about once per second at 60fps)
+                static mut FRAME_COUNT: u32 = 0;
+                unsafe {
+                    FRAME_COUNT += 1;
+                    if FRAME_COUNT % 60 == 0 {
+                        info!("🎮 Player depth debug - Center Y: {:.1}, Feet Y: {:.1}, Old Z: {:.3}, New Z: {:.3}, t: {:.3}", 
+                              player_center_y, player_feet_y, old_z, player_z, t);
+                    }
+                }
             }
         }
-    }
-}
 
 /// System to configure camera projection to prevent Z-depth culling issues
 fn configure_camera_projection(
@@ -185,6 +198,113 @@ fn debug_tile_depths(
                 info!("🗺️ Sample tiles (Y, Z, Type):");
                 for (y, z, tile_type) in sample_tiles {
                     info!("   Y: {:.1}, Z: {:.3}, Type: {}", y, z, tile_type);
+                }
+            }
+        }
+    }
+}
+
+/// Debug system to specifically check YellowGrass Z values
+fn debug_yellowgrass_tiles(
+    tile_query: Query<(&Transform, &crate::collision::TileMarker)>,
+) {
+    // Debug log every 300 frames (about once per 5 seconds at 60fps)
+    static mut FRAME_COUNT: u32 = 0;
+    unsafe {
+        FRAME_COUNT += 1;
+        if FRAME_COUNT % 300 == 0 {
+            let mut yellowgrass_z_values: Vec<(f32, f32)> = Vec::new(); // (Y, Z)
+            let mut yellowgrass_count = 0;
+            let mut min_yg_z = f32::MAX;
+            let mut max_yg_z = f32::MIN;
+            
+            for (transform, tile_marker) in tile_query.iter() {
+                if tile_marker.tile_type == crate::collision::TileType::YellowGrass {
+                    yellowgrass_count += 1;
+                    let z = transform.translation.z;
+                    min_yg_z = min_yg_z.min(z);
+                    max_yg_z = max_yg_z.max(z);
+                    
+                    // Collect first 10 YellowGrass tiles
+                    if yellowgrass_z_values.len() < 10 {
+                        yellowgrass_z_values.push((transform.translation.y, z));
+                    }
+                }
+            }
+            
+            if yellowgrass_count > 0 {
+                info!("🌾 YellowGrass depth debug - {} tiles, Z range: {:.3} to {:.3}", 
+                      yellowgrass_count, min_yg_z, max_yg_z);
+                info!("🌾 Sample YellowGrass tiles (Y, Z):");
+                for (y, z) in yellowgrass_z_values {
+                    info!("   Y: {:.1}, Z: {:.3}", y, z);
+                }
+            }
+        }
+    }
+}
+
+/// Debug system to specifically check props (trees, rocks) Z values
+fn debug_props_depth(
+    tile_query: Query<(&Transform, &crate::collision::TileMarker)>,
+) {
+    // Debug log every 300 frames (about once per 5 seconds at 60fps)
+    static mut FRAME_COUNT: u32 = 0;
+    unsafe {
+        FRAME_COUNT += 1;
+        if FRAME_COUNT % 300 == 0 {
+            let mut tree_count = 0;
+            let mut rock_count = 0;
+            let mut tree_z_values: Vec<(f32, f32)> = Vec::new(); // (Y, Z)
+            let mut rock_z_values: Vec<(f32, f32)> = Vec::new(); // (Y, Z)
+            let mut min_tree_z = f32::MAX;
+            let mut max_tree_z = f32::MIN;
+            let mut min_rock_z = f32::MAX;
+            let mut max_rock_z = f32::MIN;
+            
+            for (transform, tile_marker) in tile_query.iter() {
+                match tile_marker.tile_type {
+                    crate::collision::TileType::Tree => {
+                        tree_count += 1;
+                        let z = transform.translation.z;
+                        min_tree_z = min_tree_z.min(z);
+                        max_tree_z = max_tree_z.max(z);
+                        
+                        // Collect first 10 tree tiles
+                        if tree_z_values.len() < 10 {
+                            tree_z_values.push((transform.translation.y, z));
+                        }
+                    }
+                    crate::collision::TileType::Rock => {
+                        rock_count += 1;
+                        let z = transform.translation.z;
+                        min_rock_z = min_rock_z.min(z);
+                        max_rock_z = max_rock_z.max(z);
+                        
+                        // Collect first 10 rock tiles
+                        if rock_z_values.len() < 10 {
+                            rock_z_values.push((transform.translation.y, z));
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            
+            if tree_count > 0 {
+                info!("🌳 Tree depth debug - {} tiles, Z range: {:.3} to {:.3}", 
+                      tree_count, min_tree_z, max_tree_z);
+                info!("🌳 Sample tree tiles (Y, Z):");
+                for (y, z) in tree_z_values {
+                    info!("   Y: {:.1}, Z: {:.3}", y, z);
+                }
+            }
+            
+            if rock_count > 0 {
+                info!("🪨 Rock depth debug - {} tiles, Z range: {:.3} to {:.3}", 
+                      rock_count, min_rock_z, max_rock_z);
+                info!("🪨 Sample rock tiles (Y, Z):");
+                for (y, z) in rock_z_values {
+                    info!("   Y: {:.1}, Z: {:.3}", y, z);
                 }
             }
         }
@@ -243,6 +363,61 @@ fn follow_player_and_fog(
 
         if let Some(material) = materials.get_mut(&material_handle.0) {
             material.player_pos = player_pos;
+        }
+    }
+}
+
+/// Debug system to compare player Z with nearby props
+fn debug_player_vs_props(
+    player_query: Query<&Transform, With<crate::player::Player>>,
+    tile_query: Query<(&Transform, &crate::collision::TileMarker)>,
+) {
+    // Debug log every 300 frames (about once per 5 seconds at 60fps)
+    static mut FRAME_COUNT: u32 = 0;
+    unsafe {
+        FRAME_COUNT += 1;
+        if FRAME_COUNT % 300 == 0 {
+            let Ok(player_transform) = player_query.single() else {
+                return;
+            };
+            
+            let player_z = player_transform.translation.z;
+            let player_y = player_transform.translation.y;
+            
+            // Find props within 2 tiles of player
+            let mut nearby_props: Vec<(f32, f32, String)> = Vec::new(); // (Y, Z, Type)
+            
+            for (transform, tile_marker) in tile_query.iter() {
+                match tile_marker.tile_type {
+                    crate::collision::TileType::Tree | crate::collision::TileType::Rock => {
+                        let prop_y = transform.translation.y;
+                        let prop_z = transform.translation.z;
+                        let distance = (prop_y - player_y).abs();
+                        
+                        // Only consider props within 2 tiles (128 pixels)
+                        if distance <= 128.0 {
+                            nearby_props.push((
+                                prop_y,
+                                prop_z,
+                                format!("{:?}", tile_marker.tile_type)
+                            ));
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            
+            if !nearby_props.is_empty() {
+                info!("🎮 Player vs Props Z comparison:");
+                info!("   Player: Y={:.1}, Z={:.3}", player_y, player_z);
+                info!("   Nearby props:");
+                for (y, z, tile_type) in nearby_props {
+                    let z_diff = player_z - z;
+                    let y_diff = player_y - y;
+                    info!("     {}: Y={:.1}, Z={:.3}, Z_diff={:+.3}, Y_diff={:+.1}", 
+                          tile_type, y, z, z_diff, y_diff);
+                }
+            }
         }
     }
 }
