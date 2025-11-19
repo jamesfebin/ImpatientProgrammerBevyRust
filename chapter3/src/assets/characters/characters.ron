@@ -1,0 +1,197 @@
+(
+    characters: [
+        (
+        name: "male",
+        // Character attributes
+        max_health: 100.0,
+        base_move_speed: 140.0,
+        run_speed_multiplier: 1.8,
+        
+        // Animation data
+        texture_path: "male_spritesheet.png",
+        tile_size: 64,
+        atlas_columns: 9,
+        animations: {
+            Walk: (
+                start_row: 8,
+                frame_count: 9,
+                frame_time: 0.1,
+                directional: true,
+            ),
+            Run: (
+                start_row: 38,
+                frame_count: 8,
+                frame_time: 0.08,
+                directional: true,
+            ),
+            Jump: (
+                start_row: 26,
+                frame_count: 5,
+                frame_time: 0.1,
+                directional: true,
+            ),
+        }
+    ),
+    (
+        name: "female",
+        // Character attributes
+        max_health: 95.0,
+        base_move_speed: 150.0,
+        run_speed_multiplier: 1.9,
+        
+        // Animation data
+        texture_path: "female_spritesheet.png",
+        tile_size: 64,
+        atlas_columns: 9,
+        animations: {
+            Walk: (
+                start_row: 8,
+                frame_count: 9,
+                frame_time: 0.1,
+                directional: true,
+            ),
+            Run: (
+                start_row: 38,
+                frame_count: 8,
+                frame_time: 0.08,
+                directional: true,
+            ),
+            Jump: (
+                start_row: 26,
+                frame_count: 5,
+                frame_time: 0.1,
+                directional: true,
+            ),
+        }
+    ),
+    (
+        name: "crimson_count",
+        // Character attributes - vampire-like, fast and agile
+        max_health: 120.0,
+        base_move_speed: 180.0,
+        run_speed_multiplier: 2.2,
+        
+        // Animation data
+        texture_path: "crimson_count_spritesheet.png",
+        tile_size: 64,
+        atlas_columns: 9,
+        animations: {
+            Walk: (
+                start_row: 8,
+                frame_count: 9,
+                frame_time: 0.1,
+                directional: true,
+            ),
+            Run: (
+                start_row: 38,
+                frame_count: 8,
+                frame_time: 0.08,
+                directional: true,
+            ),
+            Jump: (
+                start_row: 26,
+                frame_count: 5,
+                frame_time: 0.1,
+                directional: true,
+            ),
+        }
+    ),
+    (
+        name: "graveyard_reaper",
+        // Character attributes - reaper, high health, moderate speed
+        max_health: 150.0,
+        base_move_speed: 120.0,
+        run_speed_multiplier: 1.6,
+        
+        // Animation data
+        texture_path: "graveyard_reaper_spritesheet.png",
+        tile_size: 64,
+        atlas_columns: 9,
+        animations: {
+            Walk: (
+                start_row: 8,
+                frame_count: 9,
+                frame_time: 0.1,
+                directional: true,
+            ),
+            Run: (
+                start_row: 38,
+                frame_count: 8,
+                frame_time: 0.08,
+                directional: true,
+            ),
+            Jump: (
+                start_row: 26,
+                frame_count: 5,
+                frame_time: 0.1,
+                directional: true,
+            ),
+        }
+    ),
+    (
+        name: "lantern_warden",
+        // Character attributes - warden, high health, slower
+        max_health: 140.0,
+        base_move_speed: 110.0,
+        run_speed_multiplier: 1.5,
+        
+        // Animation data
+        texture_path: "lantern_warden_spritesheet.png",
+        tile_size: 64,
+        atlas_columns: 9,
+        animations: {
+            Walk: (
+                start_row: 8,
+                frame_count: 9,
+                frame_time: 0.1,
+                directional: true,
+            ),
+            Run: (
+                start_row: 38,
+                frame_count: 8,
+                frame_time: 0.08,
+                directional: true,
+            ),
+            Jump: (
+                start_row: 26,
+                frame_count: 5,
+                frame_time: 0.1,
+                directional: true,
+            ),
+        }
+    ),
+    (
+        name: "starlit_oracle",
+        // Character attributes - oracle, lower health, faster
+        max_health: 85.0,
+        base_move_speed: 170.0,
+        run_speed_multiplier: 2.1,
+        
+        // Animation data
+        texture_path: "starlit_oracle_spritesheet.png",
+        tile_size: 64,
+        atlas_columns: 9,
+        animations: {
+            Walk: (
+                start_row: 8,
+                frame_count: 9,
+                frame_time: 0.1,
+                directional: true,
+            ),
+            Run: (
+                start_row: 38,
+                frame_count: 8,
+                frame_time: 0.08,
+                directional: true,
+            ),
+            Jump: (
+                start_row: 26,
+                frame_count: 5,
+                frame_time: 0.1,
+                directional: true,
+            ),
+        }
+    ),
+    ]
+)
+
