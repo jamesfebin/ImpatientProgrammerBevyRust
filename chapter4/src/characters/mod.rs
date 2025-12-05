@@ -15,7 +15,6 @@ impl Plugin for CharactersPlugin {
             .init_resource::<spawn::CurrentCharacterIndex>()
             .add_systems(Startup, spawn::spawn_player)
             .add_systems(Update, (
-                spawn::initialize_player_character,
                 spawn::switch_character,
                 movement::move_player,
                 movement::update_jump_state,
@@ -24,3 +23,4 @@ impl Plugin for CharactersPlugin {
             ));
     }
 }
+
