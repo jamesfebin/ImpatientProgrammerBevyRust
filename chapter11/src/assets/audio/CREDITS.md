@@ -28,6 +28,3 @@ Both licenses allow commercial use and open-source distribution.
 | `sfx/pickup.wav` | [Gem Collect SFX](https://opengameart.org/content/gem-collect-sfx) — OpenGameArt.org | CC0 | None required |
 | `sfx/button_click.wav` | [Button Click Sound Effect (CC0)](https://opengameart.org/content/button-click-sound-effect-cc0public-domain) by qubodup — OpenGameArt.org | CC0 | None required |
 
-Audio Credits:
-- "Spell 4 (fire)" by Bart K. — https://opengameart.org/content/spell-4-fire — CC-BY 3.0
-- "Magic SFX Sample" by ViRiX Dreamcore (David McKee) — soundcloud.com/virix — CC-BY 3.0
