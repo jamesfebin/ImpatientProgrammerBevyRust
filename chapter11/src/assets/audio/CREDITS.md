@@ -19,7 +19,7 @@ Both licenses allow commercial use and open-source distribution.
 | File | Source | License | Attribution |
 |------|--------|---------|-------------|
 | `sfx/spell_01.ogg` | [80 CC0 RPG SFX](https://opengameart.org/content/80-cc0-rpg-sfx) — OpenGameArt.org | CC0 | None required |
-| `sfx/spell_fire.wav` | [Spell 4 (fire)](https://opengameart.org/content/spell-4-fire) — OpenGameArt.org | CC-BY 3.0 | Credit: Little Robot Sound Factory |
+| `sfx/spell_fire.wav` | [Spell 4 (fire)](https://opengameart.org/content/spell-4-fire) — OpenGameArt.org | CC-BY 3.0 | Credit: Bart K|
 | `sfx/spell_enemy.ogg` | [8-bit spell/selection effect](https://opengameart.org/content/8-bit-spellselection-effect) — OpenGameArt.org | CC0 | None required |
 | `sfx/hit.wav` | [Magic SFX Sample](https://opengameart.org/content/magic-sfx-sample) — OpenGameArt.org | CC-BY 3.0 | Credit: ViRiX Dreamcore (David Mckee), soundcloud.com/virix |
 | `sfx/jump.wav` | [8-BIT Jump #1](https://opengameart.org/content/8-bit-jump-1) by jalastram — OpenGameArt.org | CC0 | None required |
@@ -27,3 +27,7 @@ Both licenses allow commercial use and open-source distribution.
 | `sfx/death_enemy.mp3` | [Hurt / Death Sound Effect for Character](https://opengameart.org/content/hurt-death-sound-effect-for-character) — OpenGameArt.org | CC0 | None required |
 | `sfx/pickup.wav` | [Gem Collect SFX](https://opengameart.org/content/gem-collect-sfx) — OpenGameArt.org | CC0 | None required |
 | `sfx/button_click.wav` | [Button Click Sound Effect (CC0)](https://opengameart.org/content/button-click-sound-effect-cc0public-domain) by qubodup — OpenGameArt.org | CC0 | None required |
+
+Audio Credits:
+- "Spell 4 (fire)" by Bart K. — https://opengameart.org/content/spell-4-fire — CC-BY 3.0
+- "Magic SFX Sample" by ViRiX Dreamcore (David McKee) — soundcloud.com/virix — CC-BY 3.0
