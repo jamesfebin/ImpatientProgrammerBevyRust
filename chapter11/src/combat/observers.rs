@@ -4,6 +4,8 @@ use super::health::Health;
 use bevy::prelude::*;
 use crate::characters::input::Player; 
 use crate::state::GameState;
+use crate::audio::SfxKind;
+
 
 /// Observer that handles projectile hits by applying damage to the target.
 pub fn on_projectile_hit(
@@ -16,6 +18,8 @@ pub fn on_projectile_hit(
     };
 
     health.take_damage(&mut commands, hit.target, hit.damage);
+
+    commands.trigger(SfxKind::Hit);
 
     info!(
         "{:?} hit for {} damage! HP: {:.0}/{:.0}",
@@ -39,6 +43,9 @@ pub fn on_entity_death(
     // Add this line
     if is_player { 
         info!("Player defeated! Game Over."); 
+        commands.trigger(SfxKind::PlayerDeath);
         next_state.set(GameState::GameOver);
+    } else {
+        commands.trigger(SfxKind::EnemyDeath);
     }
 }

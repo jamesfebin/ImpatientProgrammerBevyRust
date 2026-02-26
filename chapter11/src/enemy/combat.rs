@@ -3,6 +3,8 @@ use super::components::{AIBehavior, Enemy, EnemyCombat};
 use crate::characters::input::Player;
 use crate::combat::systems::{spawn_projectile, ProjectileOwner};
 use bevy::prelude::*;
+use crate::audio::SfxKind;
+
 
 /// System that handles enemy attacks
 pub fn enemy_attack(
@@ -37,7 +39,7 @@ pub fn enemy_attack(
             // Spawn projectile (reuse existing function!)
             spawn_projectile(&mut commands, spawn_position, combat.power_type, &visuals, ProjectileOwner::Enemy);
 
-
+            commands.trigger(SfxKind::EnemyShoot);
             // Reset cooldown for next attack
             combat.cooldown.reset();
 

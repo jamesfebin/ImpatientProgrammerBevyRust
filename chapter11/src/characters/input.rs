@@ -6,6 +6,8 @@ use super::{
     config::CharacterEntry,
     animation::{AnimationController, AnimationTimer},
 };
+use crate::audio::SfxKind;
+
 
 #[derive(Component)]
 pub struct Player;
@@ -48,6 +50,7 @@ fn determine_new_state(
 }
 
 pub fn handle_player_input(
+    mut commands: Commands,
     input: Res<ButtonInput<KeyCode>>,
     mut query: Query<(
         &mut CharacterState,
@@ -77,6 +80,9 @@ pub fn handle_player_input(
     // This calls the determine_new_state function we wrote earlier
     let new_state = determine_new_state(*state, direction, is_running, wants_jump);
     if *state != new_state {
+        if new_state == CharacterState::Jumping {
+            commands.trigger(SfxKind::Jump);
+        }
         *state = new_state;  // This triggers Changed<CharacterState>!
     }
     

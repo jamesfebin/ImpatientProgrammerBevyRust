@@ -6,6 +6,8 @@ use crate::characters::input::Player;
 use crate::particles::components::ParticleEmitter;
 use bevy::prelude::*;
 use crate::enemy::Enemy;
+use crate::audio::SfxKind;
+
 
 /// Marker for projectile effects
 #[derive(Component)]
@@ -65,6 +67,7 @@ pub fn handle_power_input(
 
     spawn_projectile(&mut commands, spawn_position, combat.power_type, &visuals, ProjectileOwner::Player);
 
+    commands.trigger(SfxKind::PlayerShoot(combat.power_type));
     info!("{:?} projectile fired!", combat.power_type);
 }
 
