@@ -21,13 +21,28 @@ use crate::camera::CameraPlugin;
 use crate::map::generate::{setup_generator, prepare_tilemap_handles_resource, poll_map_generation};
 use crate::state::GameState;
 
+fn get_assets_path() -> String {
+    // Check for assets/ next to the executable first (release builds)
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            let exe_assets = exe_dir.join("assets");
+            if exe_assets.exists() {
+                return exe_assets.to_string_lossy().to_string();
+            }
+        }
+    }
+    // Fallback for `cargo run` from project root
+    "src/assets".to_string()
+}
+
 fn main() {
+    let assets_path = get_assets_path();
     App::new()
         .insert_resource(ClearColor(Color::BLACK)) // Line update alert
         .add_plugins(
             DefaultPlugins
                 .set(AssetPlugin {
-                    file_path: "src/assets".into(),
+                    file_path: assets_path.into(),
                     ..default()
                 })
                 .set(WindowPlugin {
