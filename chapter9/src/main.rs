@@ -17,7 +17,9 @@ use bevy::{
 use bevy_procedural_tilemaps::prelude::*;
 use crate::camera::CameraPlugin;
 use crate::map::generate::{setup_generator, poll_map_generation};
+
 use crate::state::GameState;
+
 
 fn main() {
     App::new()
@@ -46,7 +48,7 @@ fn main() {
         .add_plugins(combat::CombatPlugin)
         .add_plugins(enemy::EnemyPlugin) 
         .add_plugins(particles::ParticlesPlugin)
-        .add_systems(Startup, setup_generator)
+        .add_systems(Startup, setup_generator) // Line update alert - remove setup_camera here
         .add_systems(Update, poll_map_generation.run_if(in_state(GameState::Loading)))
         .run();
 }

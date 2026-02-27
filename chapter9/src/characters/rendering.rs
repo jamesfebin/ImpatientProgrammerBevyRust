@@ -17,7 +17,7 @@ pub fn update_character_depth( // Line update alert: Renamed from update_player_
 ) {
     // Map dimensions for normalization
     let map_height = TILE_SIZE * TOTAL_GRID_Y as f32;
-    let map_y0 = -TILE_SIZE * TOTAL_GRID_Y as f32 / 2.0;  
+    let map_y0 = -TILE_SIZE * TOTAL_GRID_Y as f32 / 2.0; 
     
     // Character sprite height for feet position calculation // Line update alert
     let character_sprite_height = 64.0 * PLAYER_SCALE; // Line update alert

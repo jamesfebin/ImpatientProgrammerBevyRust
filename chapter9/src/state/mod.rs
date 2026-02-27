@@ -7,7 +7,6 @@ use bevy::prelude::*;
 use crate::characters::spawn::CharactersListResource;
 use crate::characters::config::CharactersList;
 use crate::map::generate::MapReady;
-
 pub use game_state::GameState;
 
 pub struct StatePlugin;
@@ -49,14 +48,14 @@ impl Plugin for StatePlugin {
 fn check_assets_loaded(
     characters_list_res: Option<Res<CharactersListResource>>,
     characters_lists: Res<Assets<CharactersList>>,
-    map_ready: Option<Res<MapReady>>,
     mut next_state: ResMut<NextState<GameState>>,
+    map_ready: Option<Res<MapReady>>,
 ) {
     let Some(res) = characters_list_res else {
         return;
     };
     
-    if characters_lists.get(&res.handle).is_some() && map_ready.is_some()  {
+    if characters_lists.get(&res.handle).is_some()  && map_ready.is_some() {
         info!("Assets loaded, transitioning to Playing!");
         next_state.set(GameState::Playing);
     }
