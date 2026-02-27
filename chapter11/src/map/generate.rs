@@ -24,8 +24,8 @@ const NODE_SIZE: Vec3 = Vec3::new(TILE_SIZE, TILE_SIZE, NODE_SIZE_Z);
 const ASSETS_SCALE: Vec3 = Vec3::new(2.0, 2.0, 1.0);
 const GRID_Z: u32 = 5;
 
-/// Maximum unpin radius for progressive corner unpinning fallback.
-const MAX_UNPIN_RADIUS: u32 = 5;
+/// Safety cap to avoid infinite loops if strict seam constraints cannot be solved.
+const MAX_BACKTRACKS: u32 = 2048;
 
 /// Shared progress counter for the loading screen.
 #[derive(Resource)]
@@ -150,31 +150,53 @@ fn generate_all_chunks(
     grid_template: CartesianGrid<Cartesian3D>,
     progress: Arc<AtomicU32>,
 ) -> Vec<ChunkResult> {
+    let chunk_order = build_chunk_order();
     let mut generated_chunks: HashMap<
         (u32, u32),
         GridData<Cartesian3D, ModelInstance, CartesianGrid<Cartesian3D>>,
     > = HashMap::new();
+    let mut index: usize = 0;
+    let mut backtracks: u32 = 0;
 
-    for cy in 0..CHUNKS_Y {
-        for cx in 0..CHUNKS_X {
-            // Seed borders from neighbors
-            let initial_nodes = build_initial_nodes(cx, cy, &generated_chunks, &grid_template);
-            let is_corner = cx > 0 && cy > 0;
+    while index < chunk_order.len() {
+        let (cx, cy) = chunk_order[index];
+        let initial_nodes = build_initial_nodes(cx, cy, &generated_chunks, &grid_template);
 
-            // Generate with fallback for robustness
-            let grid_data = generate_chunk_with_fallback(
-                &rules_arc,
-                &grid_template,
-                &initial_nodes,
-                is_corner,
-                cx,
-                cy,
-            );
-
+        if let Some(grid_data) = try_generate_chunk(&rules_arc, &grid_template, &initial_nodes) {
             generated_chunks.insert((cx, cy), grid_data);
-            progress.fetch_add(1, Ordering::Relaxed);
+            progress.store((index as u32) + 1, Ordering::Relaxed);
             info!("Generated chunk ({}, {})", cx, cy);
+            index += 1;
+            continue;
         }
+
+        let Some(backtrack_to) = backtrack_start_index(index, cx, cy) else {
+            panic!(
+                "Chunk ({}, {}) failed with strict seam pins and has no valid backtrack target",
+                cx, cy
+            );
+        };
+
+        backtracks += 1;
+        if backtracks > MAX_BACKTRACKS {
+            panic!(
+                "Exceeded max backtracks ({}) while generating strict stitched map",
+                MAX_BACKTRACKS
+            );
+        }
+
+        let (bt_x, bt_y) = chunk_order[backtrack_to];
+        warn!(
+            "Chunk ({}, {}) failed with strict seam pins; backtracking to chunk ({}, {}) [{}/{}]",
+            cx, cy, bt_x, bt_y, backtracks, MAX_BACKTRACKS
+        );
+
+        for rollback_index in backtrack_to..index {
+            let (rx, ry) = chunk_order[rollback_index];
+            generated_chunks.remove(&(rx, ry));
+        }
+        progress.store(backtrack_to as u32, Ordering::Relaxed);
+        index = backtrack_to;
     }
 
     // Convert HashMap into results for spawning
@@ -238,41 +260,27 @@ fn build_initial_nodes(
     initial_nodes
 }
 
-fn generate_chunk_with_fallback(
-    rules: &Arc<Rules<Cartesian3D>>,
-    grid: &CartesianGrid<Cartesian3D>,
-    initial_nodes: &[((u32, u32, u32), ModelInstance)],
-    is_corner: bool,
-    cx: u32,
-    cy: u32,
-) -> GridData<Cartesian3D, ModelInstance, CartesianGrid<Cartesian3D>> {
-    // Try with full initial nodes first
-    if let Some(data) = try_generate_chunk(rules, grid, initial_nodes) {
-        return data;
-    }
-
-    if !is_corner {
-        panic!("Non-corner chunk ({}, {}) failed -- check your rules!", cx, cy);
-    }
-
-    // Progressive unpinning: remove an L-shaped region at the corner
-    for radius in 1..=MAX_UNPIN_RADIUS {
-        let reduced: Vec<_> = initial_nodes
-            .iter()
-            .filter(|&&((x, y, _z), _)| {
-                // Keep nodes NOT in the L-shaped corner region
-                !((x == 0 && y < radius) || (y == 0 && x > 0 && x <= radius))
-            })
-            .copied()
-            .collect();
-
-        if let Some(data) = try_generate_chunk(rules, grid, &reduced) {
-            warn!("Corner chunk ({}, {}) needed unpin radius {}", cx, cy, radius);
-            return data;
+fn build_chunk_order() -> Vec<(u32, u32)> {
+    let mut order = Vec::with_capacity((CHUNKS_X * CHUNKS_Y) as usize);
+    for cy in 0..CHUNKS_Y {
+        for cx in 0..CHUNKS_X {
+            order.push((cx, cy));
         }
     }
+    order
+}
 
-    panic!("Corner chunk ({}, {}) failed to generate.", cx, cy);
+fn backtrack_start_index(index: usize, cx: u32, cy: u32) -> Option<usize> {
+    if cx > 0 && cy > 0 {
+        // Corner conflict: reopen the 2x2 dependency root.
+        Some(index - CHUNKS_X as usize - 1)
+    } else if cx > 0 {
+        Some(index - 1)
+    } else if cy > 0 {
+        Some(index - CHUNKS_X as usize)
+    } else {
+        None
+    }
 }
 
 fn try_generate_chunk(
@@ -280,13 +288,34 @@ fn try_generate_chunk(
     grid: &CartesianGrid<Cartesian3D>,
     initial_nodes: &[((u32, u32, u32), ModelInstance)],
 ) -> Option<GridData<Cartesian3D, ModelInstance, CartesianGrid<Cartesian3D>>> {
-    // In v0.3 we explicitly set border zones
-    let num_directions = 6;
-    let mut border_zones = Vec::with_capacity(initial_nodes.len() * num_directions);
+    // Border exemptions are directional: only outward chunk-boundary directions.
+    let mut border_zones = Vec::with_capacity(initial_nodes.len() * 2);
+    let dir_x_forward = usize::from(Direction::XForward);
+    let dir_y_forward = usize::from(Direction::YForward);
+    let dir_x_backward = usize::from(Direction::XBackward);
+    let dir_y_backward = usize::from(Direction::YBackward);
+    let dir_z_forward = usize::from(Direction::ZForward);
+    let dir_z_backward = usize::from(Direction::ZBackward);
+
     for &((x, y, z), _) in initial_nodes {
         let idx = grid.index_from_coords(x, y, z);
-        for dir in 0..num_directions {
-            border_zones.push((idx, dir));
+        if x == 0 {
+            border_zones.push((idx, dir_x_backward));
+        }
+        if x == GRID_X - 1 {
+            border_zones.push((idx, dir_x_forward));
+        }
+        if y == 0 {
+            border_zones.push((idx, dir_y_backward));
+        }
+        if y == GRID_Y - 1 {
+            border_zones.push((idx, dir_y_forward));
+        }
+        if z == 0 {
+            border_zones.push((idx, dir_z_backward));
+        }
+        if z == GRID_Z - 1 {
+            border_zones.push((idx, dir_z_forward));
         }
     }
 
