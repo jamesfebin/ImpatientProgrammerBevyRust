@@ -87,6 +87,30 @@ pub fn build_collision_map(
 
     // Post-processing: Convert water edges to shore
     convert_water_edges_to_shore(&mut map);
+
+    // DEBUG: Log collision map stats
+    let mut type_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    for y in 0..actual_height {
+        for x in 0..actual_width {
+            let tile_name = match map.get_tile(x, y) {
+                Some(TileType::Empty) => "Empty",
+                Some(TileType::Dirt) => "Dirt",
+                Some(TileType::Grass) => "Grass",
+                Some(TileType::YellowGrass) => "YellowGrass",
+                Some(TileType::Shore) => "Shore",
+                Some(TileType::Water) => "Water",
+                Some(TileType::Tree) => "Tree",
+                Some(TileType::Rock) => "Rock",
+                None => "OutOfBounds",
+            };
+            *type_counts.entry(tile_name.to_string()).or_default() += 1;
+        }
+    }
+    info!(
+        "CollisionMap built: {}x{} grid, origin=({}, {}), min_grid=({}, {}), tiles_queried={}, tile_types={:?}",
+        actual_width, actual_height, grid_origin_x, grid_origin_y, min_x, min_y, tile_count, type_counts
+    );
+
     // Insert as resource and mark built
     commands.insert_resource(map);
     built.0 = true;

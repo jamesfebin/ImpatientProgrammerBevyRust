@@ -9,7 +9,7 @@ use crate::characters::{
     spawn::CharactersListResource, // Add this line
     state::CharacterState,
 };
-use crate::collision::CollisionMap;
+use crate::collision::{CollisionMap, TileType};
 use crate::config::enemy::{ENEMY_SCALE, ENEMY_Z_POSITION};
 use crate::config::player::COLLIDER_RADIUS;
 use bevy::prelude::*;
@@ -81,19 +81,46 @@ pub struct EnemiesSpawned(pub bool);
 
 /// Validate and adjust spawn position to ensure it's on a walkable tile
 fn get_valid_spawn_position(collision_map: &CollisionMap, desired_pos: Vec2) -> Vec2 {
-    if collision_map.is_circle_clear(desired_pos, COLLIDER_RADIUS) {
+    let grid = collision_map.world_to_grid(desired_pos);
+    let tile_at_pos = collision_map.get_tile(grid.x, grid.y);
+    let circle_clear = collision_map.is_circle_clear(desired_pos, COLLIDER_RADIUS);
+    info!(
+        "[ENEMY SPAWN DEBUG] desired={:?}, grid=({}, {}), tile={:?}, is_circle_clear(r={})={}",
+        desired_pos, grid.x, grid.y, tile_at_pos, COLLIDER_RADIUS, circle_clear
+    );
+
+    if circle_clear {
+        // Double-check: log surrounding tiles
+        for dy in -1..=1i32 {
+            for dx in -1..=1i32 {
+                let t = collision_map.get_tile(grid.x + dx, grid.y + dy);
+                if let Some(t) = t {
+                    if !t.is_walkable() {
+                        info!(
+                            "[ENEMY SPAWN DEBUG]   neighbor({},{}) = {:?} (unwalkable!)",
+                            grid.x + dx, grid.y + dy, t
+                        );
+                    }
+                }
+            }
+        }
         return desired_pos;
     }
 
     if let Some(clear_pos) = collision_map.find_nearest_clear_position(desired_pos, COLLIDER_RADIUS) {
+        let new_grid = collision_map.world_to_grid(clear_pos);
+        let new_tile = collision_map.get_tile(new_grid.x, new_grid.y);
         info!(
-            "Adjusted spawn from {:?} to {:?} (was on obstacle)",
-            desired_pos, clear_pos
+            "[ENEMY SPAWN DEBUG] Adjusted spawn: {:?} -> {:?}, new_grid=({}, {}), new_tile={:?}",
+            desired_pos, clear_pos, new_grid.x, new_grid.y, new_tile
         );
         return clear_pos;
     }
 
-    warn!("Could not find walkable spawn position near {:?}", desired_pos);
+    warn!(
+        "[ENEMY SPAWN DEBUG] FAILED to find clear position near {:?} — returning invalid pos!",
+        desired_pos
+    );
     desired_pos
 }
 

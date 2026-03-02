@@ -8,7 +8,7 @@ use crate::characters::facing::Facing;  // Line update alert
 use crate::characters::collider::Collider; 
 use crate::config::player::{COLLIDER_RADIUS, PLAYER_SCALE, PLAYER_Z_POSITION};
 use crate::combat::PlayerCombat;
-use crate::collision::CollisionMap;
+use crate::collision::{CollisionMap, TileType};
 use crate::combat::Health;
 
 #[derive(Resource, Default)]
@@ -106,19 +106,45 @@ pub struct PlayerSpawned(pub bool);
 
 /// Get a valid spawn position, checking collision map and adjusting if needed
 fn get_valid_spawn_position(collision_map: &CollisionMap, desired_pos: Vec2) -> Vec2 {
-    if collision_map.is_circle_clear(desired_pos, COLLIDER_RADIUS) {
+    let grid = collision_map.world_to_grid(desired_pos);
+    let tile_at_pos = collision_map.get_tile(grid.x, grid.y);
+    let circle_clear = collision_map.is_circle_clear(desired_pos, COLLIDER_RADIUS);
+    info!(
+        "[PLAYER SPAWN DEBUG] desired={:?}, grid=({}, {}), tile={:?}, is_circle_clear(r={})={}",
+        desired_pos, grid.x, grid.y, tile_at_pos, COLLIDER_RADIUS, circle_clear
+    );
+
+    if circle_clear {
+        for dy in -1..=1i32 {
+            for dx in -1..=1i32 {
+                let t = collision_map.get_tile(grid.x + dx, grid.y + dy);
+                if let Some(t) = t {
+                    if !t.is_walkable() {
+                        info!(
+                            "[PLAYER SPAWN DEBUG]   neighbor({},{}) = {:?} (unwalkable!)",
+                            grid.x + dx, grid.y + dy, t
+                        );
+                    }
+                }
+            }
+        }
         return desired_pos;
     }
 
     if let Some(clear_pos) = collision_map.find_nearest_clear_position(desired_pos, COLLIDER_RADIUS) {
+        let new_grid = collision_map.world_to_grid(clear_pos);
+        let new_tile = collision_map.get_tile(new_grid.x, new_grid.y);
         info!(
-            "Adjusted player spawn from {:?} to {:?} (was on obstacle)",
-            desired_pos, clear_pos
+            "[PLAYER SPAWN DEBUG] Adjusted: {:?} -> {:?}, new_grid=({}, {}), new_tile={:?}",
+            desired_pos, clear_pos, new_grid.x, new_grid.y, new_tile
         );
         return clear_pos;
     }
 
-    warn!("Could not find walkable spawn position near {:?}", desired_pos);
+    warn!(
+        "[PLAYER SPAWN DEBUG] FAILED to find clear position near {:?} — returning invalid pos!",
+        desired_pos
+    );
     desired_pos
 }
 
