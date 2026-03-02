@@ -137,7 +137,6 @@ pub fn poll_map_generation(
     );
 }
 
-
 fn generate_all_chunks(
     rules_arc: Arc<Rules<Cartesian3D>>,
     grid_template: CartesianGrid<Cartesian3D>,
@@ -192,7 +191,6 @@ fn generate_all_chunks(
         index = backtrack_to;
     }
 
-
     // Convert HashMap into results for spawning
     let mut results = Vec::with_capacity((CHUNKS_X * CHUNKS_Y) as usize);
     for cy in 0..CHUNKS_Y {
@@ -214,6 +212,28 @@ fn generate_all_chunks(
     results
 }
 
+fn build_chunk_order() -> Vec<(u32, u32)> {
+    let mut order = Vec::with_capacity((CHUNKS_X * CHUNKS_Y) as usize);
+    for cy in 0..CHUNKS_Y {
+        for cx in 0..CHUNKS_X {
+            order.push((cx, cy));
+        }
+    }
+    order
+}
+
+fn backtrack_start_index(index: usize, cx: u32, cy: u32) -> Option<usize> {
+    if cx > 0 && cy > 0 {
+        // Corner conflict: reopen the 2x2 dependency root.
+        Some(index - CHUNKS_X as usize - 1)
+    } else if cx > 0 {
+        Some(index - 1)
+    } else if cy > 0 {
+        Some(index - CHUNKS_X as usize)
+    } else {
+        None
+    }
+}
 
 fn build_initial_nodes(
     cx: u32,
@@ -252,29 +272,6 @@ fn build_initial_nodes(
     }
 
     initial_nodes
-}
-
-fn build_chunk_order() -> Vec<(u32, u32)> {
-    let mut order = Vec::with_capacity((CHUNKS_X * CHUNKS_Y) as usize);
-    for cy in 0..CHUNKS_Y {
-        for cx in 0..CHUNKS_X {
-            order.push((cx, cy));
-        }
-    }
-    order
-}
-
-fn backtrack_start_index(index: usize, cx: u32, cy: u32) -> Option<usize> {
-    if cx > 0 && cy > 0 {
-        // Corner conflict: reopen the 2x2 dependency root.
-        Some(index - CHUNKS_X as usize - 1)
-    } else if cx > 0 {
-        Some(index - 1)
-    } else if cy > 0 {
-        Some(index - CHUNKS_X as usize)
-    } else {
-        None
-    }
 }
 
 fn try_generate_chunk(
@@ -340,7 +337,6 @@ fn try_generate_chunk(
         Err(_) => None,
     }
 }
-
 
 fn spawn_chunk_tiles(
     commands: &mut Commands,
