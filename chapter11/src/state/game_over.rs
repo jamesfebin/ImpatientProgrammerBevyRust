@@ -7,7 +7,7 @@ use crate::combat::healthbar::HealthBarOwner;
 use crate::combat::systems::{Projectile, ProjectileEffect};
 use crate::enemy::{spawn::EnemiesSpawned, Enemy};
 use crate::particles::components::{Particle, ParticleEmitter};
-use crate::collision::{TileMarker, CollisionMapBuilt};
+use crate::collision::{CollisionMap, TileMarker, CollisionMapBuilt};
 use crate::inventory::Inventory;
 use crate::map::generate::MapReady;
 
@@ -107,6 +107,7 @@ pub fn cleanup_game_world(
     enemies_spawned.0 = false;
 
     collision_map_built.0 = false;
+    commands.remove_resource::<CollisionMap>();
     inventory.set_items(Default::default());
     commands.remove_resource::<MapReady>();
 
