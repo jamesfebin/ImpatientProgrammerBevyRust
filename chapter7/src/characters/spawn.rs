@@ -8,6 +8,8 @@ use crate::characters::facing::Facing;  // Line update alert
 use crate::characters::collider::Collider; 
 use crate::config::player::{PLAYER_SCALE, PLAYER_Z_POSITION}; 
 use crate::combat::PlayerCombat;
+use crate::collision::CollisionMapBuilt; 
+use crate::config::player::COLLIDER_RADIUS;
 use crate::collision::CollisionMap;
 
 #[derive(Resource, Default)]
@@ -35,95 +37,26 @@ fn create_character_atlas_layout(
     ))
 }
 
-pub fn switch_character(
-    input: Res<ButtonInput<KeyCode>>,
-    mut character_index: ResMut<CurrentCharacterIndex>,
-    characters_lists: Res<Assets<CharactersList>>,
-    characters_list_res: Option<Res<CharactersListResource>>,
-    mut query: Query<(
-        &mut CharacterEntry,
-        &mut Sprite,
-    ), With<Player>>,
-    mut atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
-    asset_server: Res<AssetServer>,
-) {
-    // Map digit keys to indices
-    const DIGIT_KEYS: [KeyCode; 9] = [
-        KeyCode::Digit1, KeyCode::Digit2, KeyCode::Digit3,
-        KeyCode::Digit4, KeyCode::Digit5, KeyCode::Digit6,
-        KeyCode::Digit7, KeyCode::Digit8, KeyCode::Digit9,
-    ];
-    
-    // Find which digit key was pressed
-    let new_index = DIGIT_KEYS.iter()
-        .position(|&key| input.just_pressed(key));
-    
-    let Some(new_index) = new_index else {
-        return;
-    };
-    
-    let Some(characters_list_res) = characters_list_res else {
-        return;
-    };
-    
-    let Some(characters_list) = characters_lists.get(&characters_list_res.handle) else {
-        return;
-    };
-    
-    if new_index >= characters_list.characters.len() {
-        return;
-    }
-    
-    // Update character index
-    character_index.index = new_index;
-    
-    // Update player entity
-    let Ok((mut current_entry, mut sprite)) = query.single_mut() else {
-        return;
-    };
-    
-    let character_entry = &characters_list.characters[new_index];
-    
-    // Update character entry
-    *current_entry = character_entry.clone();
-    
-    // Update sprite with new texture
-    let texture = asset_server.load(&character_entry.texture_path);
-    let layout = create_character_atlas_layout(&mut atlas_layouts, character_entry);
-    
-    *sprite = Sprite::from_atlas_image(
-        texture,
-        TextureAtlas {
-            layout,
-            index: 0,
-        },
-    );
-}
-
+/// Resource to track if player has been spawned (prevents spawning multiple times)
 #[derive(Resource, Default, PartialEq, Eq)]
 pub struct PlayerSpawned(pub bool);
 
-// Add this helper function after create_character_atlas_layout
 /// Get a valid spawn position, checking collision map and adjusting if needed
 fn get_valid_spawn_position(collision_map: &CollisionMap, desired_pos: Vec2) -> Vec2 {
-    let player_radius = 12.0; // Approximate player collision radius
-    
-    // Check if the desired position is clear
-    if collision_map.is_circle_clear(desired_pos, player_radius) {
+    // Use the same radius as the runtime collision system
+    if collision_map.is_circle_clear(desired_pos, COLLIDER_RADIUS) {
         return desired_pos;
     }
-    
-    // Find nearest walkable tile
-    let grid_pos = collision_map.world_to_grid(desired_pos);
-    if let Some(walkable) = collision_map.find_nearest_walkable(grid_pos) {
-        let world_pos = collision_map.grid_to_world(walkable.x, walkable.y);
+
+    // Find nearest position where the full collider circle is clear
+    if let Some(clear_pos) = collision_map.find_nearest_clear_position(desired_pos, COLLIDER_RADIUS) {
         info!(
             "Adjusted player spawn from {:?} to {:?} (was on obstacle)",
-            desired_pos, world_pos
+            desired_pos, clear_pos
         );
-        return world_pos;
+        return clear_pos;
     }
-    
+
     // Fallback to original
     warn!("Could not find walkable spawn position near {:?}", desired_pos);
     desired_pos
@@ -216,4 +149,69 @@ pub fn spawn_player_at_valid_position(
     // Mark player as spawned
     player_spawned.0 = true;
     info!("Player spawned at validated position {:?}", valid_pos);
+}
+
+pub fn switch_character(
+    input: Res<ButtonInput<KeyCode>>,
+    mut character_index: ResMut<CurrentCharacterIndex>,
+    characters_lists: Res<Assets<CharactersList>>,
+    characters_list_res: Option<Res<CharactersListResource>>,
+    mut query: Query<(
+        &mut CharacterEntry,
+        &mut Sprite,
+    ), With<Player>>,
+    mut atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    asset_server: Res<AssetServer>,
+) {
+    // Map digit keys to indices
+    const DIGIT_KEYS: [KeyCode; 9] = [
+        KeyCode::Digit1, KeyCode::Digit2, KeyCode::Digit3,
+        KeyCode::Digit4, KeyCode::Digit5, KeyCode::Digit6,
+        KeyCode::Digit7, KeyCode::Digit8, KeyCode::Digit9,
+    ];
+    
+    // Find which digit key was pressed
+    let new_index = DIGIT_KEYS.iter()
+        .position(|&key| input.just_pressed(key));
+    
+    let Some(new_index) = new_index else {
+        return;
+    };
+    
+    let Some(characters_list_res) = characters_list_res else {
+        return;
+    };
+    
+    let Some(characters_list) = characters_lists.get(&characters_list_res.handle) else {
+        return;
+    };
+    
+    if new_index >= characters_list.characters.len() {
+        return;
+    }
+    
+    // Update character index
+    character_index.index = new_index;
+    
+    // Update player entity
+    let Ok((mut current_entry, mut sprite)) = query.single_mut() else {
+        return;
+    };
+    
+    let character_entry = &characters_list.characters[new_index];
+    
+    // Update character entry
+    *current_entry = character_entry.clone();
+    
+    // Update sprite with new texture
+    let texture = asset_server.load(&character_entry.texture_path);
+    let layout = create_character_atlas_layout(&mut atlas_layouts, character_entry);
+    
+    *sprite = Sprite::from_atlas_image(
+        texture,
+        TextureAtlas {
+            layout,
+            index: 0,
+        },
+    );
 }

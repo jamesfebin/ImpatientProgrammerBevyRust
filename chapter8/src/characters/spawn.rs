@@ -6,7 +6,7 @@ use crate::characters::state::CharacterState;  // Line update alert
 use crate::characters::physics::Velocity;  // Line update alert
 use crate::characters::facing::Facing;  // Line update alert
 use crate::characters::collider::Collider; 
-use crate::config::player::{PLAYER_SCALE, PLAYER_Z_POSITION}; 
+use crate::config::player::{COLLIDER_RADIUS, PLAYER_SCALE, PLAYER_Z_POSITION};
 use crate::combat::PlayerCombat;
 use crate::collision::CollisionMap;
 use crate::combat::Health;
@@ -104,28 +104,20 @@ pub fn switch_character(
 #[derive(Resource, Default, PartialEq, Eq)]
 pub struct PlayerSpawned(pub bool);
 
-// Add this helper function after create_character_atlas_layout
 /// Get a valid spawn position, checking collision map and adjusting if needed
 fn get_valid_spawn_position(collision_map: &CollisionMap, desired_pos: Vec2) -> Vec2 {
-    let player_radius = 12.0; // Approximate player collision radius
-    
-    // Check if the desired position is clear
-    if collision_map.is_circle_clear(desired_pos, player_radius) {
+    if collision_map.is_circle_clear(desired_pos, COLLIDER_RADIUS) {
         return desired_pos;
     }
-    
-    // Find nearest walkable tile
-    let grid_pos = collision_map.world_to_grid(desired_pos);
-    if let Some(walkable) = collision_map.find_nearest_walkable(grid_pos) {
-        let world_pos = collision_map.grid_to_world(walkable.x, walkable.y);
+
+    if let Some(clear_pos) = collision_map.find_nearest_clear_position(desired_pos, COLLIDER_RADIUS) {
         info!(
             "Adjusted player spawn from {:?} to {:?} (was on obstacle)",
-            desired_pos, world_pos
+            desired_pos, clear_pos
         );
-        return world_pos;
+        return clear_pos;
     }
-    
-    // Fallback to original
+
     warn!("Could not find walkable spawn position near {:?}", desired_pos);
     desired_pos
 }

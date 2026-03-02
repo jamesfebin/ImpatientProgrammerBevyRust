@@ -11,6 +11,7 @@ serde = { version = "1.0", features = ["derive"] }
 rand = "0.8" 
 pathfinding = "4.9"
 
+# Enable a small amount of optimization in the dev profile
 [profile.dev]
 opt-level = 1
 

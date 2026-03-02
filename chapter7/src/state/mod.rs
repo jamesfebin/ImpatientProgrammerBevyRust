@@ -22,7 +22,7 @@ impl Plugin for StatePlugin {
                 loading::animate_loading,
             ).run_if(in_state(GameState::Loading)))
             .add_systems(OnExit(GameState::Loading), (
-                loading::despawn_loading_screen
+                loading::despawn_loading_screen,
             ))
                 // Pause state systems
             .add_systems(OnEnter(GameState::Paused), pause::spawn_pause_menu)

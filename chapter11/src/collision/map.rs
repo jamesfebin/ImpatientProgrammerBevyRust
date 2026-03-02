@@ -305,5 +305,25 @@ impl CollisionMap {
         None
     }
 
+    /// Find nearest position where a circle of the given radius is fully clear.
+    pub fn find_nearest_clear_position(&self, world_pos: Vec2, radius: f32) -> Option<Vec2> {
+        let grid_pos = self.world_to_grid(world_pos);
+
+        for ring in 0i32..20 {
+            for dx in -ring..=ring {
+                for dy in -ring..=ring {
+                    if ring > 0 && dx.abs() != ring && dy.abs() != ring {
+                        continue;
+                    }
+                    let candidate_grid = IVec2::new(grid_pos.x + dx, grid_pos.y + dy);
+                    let candidate_world = self.grid_to_world(candidate_grid.x, candidate_grid.y);
+                    if self.is_circle_clear(candidate_world, radius) {
+                        return Some(candidate_world);
+                    }
+                }
+            }
+        }
+        None
+    }
 
 }

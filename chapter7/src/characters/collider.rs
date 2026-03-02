@@ -69,8 +69,6 @@ pub fn validate_movement(
     }
 }
 
-/// Resolve collisions between entities (player and enemies)
-/// Prevents entities from moving into each other
 pub fn resolve_entity_collisions(
     mut query: Query<(Entity, &Transform, &mut Velocity, &Collider)>,
 ) {

@@ -1,4 +1,3 @@
-// src/enemy/combat.rs
 use super::components::{AIBehavior, Enemy, EnemyCombat};
 use crate::characters::input::Player;
 use crate::combat::systems::spawn_projectile;

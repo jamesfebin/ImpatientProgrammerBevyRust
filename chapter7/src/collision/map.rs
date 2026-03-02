@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use super::TileType;
 use pathfinding::prelude::astar;
-
 /// Collision map resource that stores walkability information.
 /// Provides efficient spatial queries for movement validation.
 #[derive(Resource)]
@@ -206,6 +205,9 @@ impl CollisionMap {
     #[cfg(debug_assertions)]
     pub fn origin(&self) -> Vec2 { Vec2::new(self.origin_x, self.origin_y) }
 
+
+        /// Get walkable neighboring grid cells (8 directions)
+    /// Diagonal movement only allowed if both adjacent cardinals are clear
     pub fn get_neighbors(&self, pos: IVec2) -> Vec<IVec2> {
         let mut neighbors = Vec::new();
         
@@ -300,6 +302,29 @@ impl CollisionMap {
                         if self.is_walkable(check.x, check.y) {
                             return Some(check);
                         }
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    /// Find nearest position where a circle of the given radius is fully clear.
+    /// Searches expanding rings up to 20 tiles from the given world position.
+    /// Returns a world-space position (tile center) or None if nothing found.
+    pub fn find_nearest_clear_position(&self, world_pos: Vec2, radius: f32) -> Option<Vec2> {
+        let grid_pos = self.world_to_grid(world_pos);
+
+        for ring in 0i32..20 {
+            for dx in -ring..=ring {
+                for dy in -ring..=ring {
+                    if ring > 0 && dx.abs() != ring && dy.abs() != ring {
+                        continue; // Only check the ring perimeter
+                    }
+                    let candidate_grid = IVec2::new(grid_pos.x + dx, grid_pos.y + dy);
+                    let candidate_world = self.grid_to_world(candidate_grid.x, candidate_grid.y);
+                    if self.is_circle_clear(candidate_world, radius) {
+                        return Some(candidate_world);
                     }
                 }
             }

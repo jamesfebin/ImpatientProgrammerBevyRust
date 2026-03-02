@@ -1,4 +1,3 @@
-// src/enemy/mod.rs
 pub mod ai;
 pub mod combat;
 pub mod components;

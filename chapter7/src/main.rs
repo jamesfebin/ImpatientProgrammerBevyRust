@@ -44,7 +44,7 @@ fn main() {
         .add_plugins(collision::CollisionPlugin)
         .add_plugins(characters::CharactersPlugin)
         .add_plugins(combat::CombatPlugin)
-        .add_plugins(enemy::EnemyPlugin) 
+        .add_plugins(enemy::EnemyPlugin)
         .add_plugins(particles::ParticlesPlugin)
         .add_systems(Startup, setup_generator) // Line update alert - remove setup_camera here
         .run();
