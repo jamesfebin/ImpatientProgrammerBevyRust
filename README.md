@@ -1,6 +1,6 @@
 # The Impatient Programmer's Guide to Bevy and Rust
 
-[Enjoy the first 7 chapters free!](https://aibodh.com/books/the-impatient-programmers-guide-to-bevy-and-rust/) The [paid ebook](https://febinjohnjames.gumroad.com/l/the-impatient-programmers-guide-to-bevy-and-rust) includes chapters 8-9, and I'm actively working on more content. As an early access release, it's currently available at a discounted price.
+[Read the first 7 chapters free!](https://aibodh.com/books/the-impatient-programmers-guide-to-bevy-and-rust/) The [paid ebook](https://febinjohnjames.gumroad.com/l/the-impatient-programmers-guide-to-bevy-and-rust) includes chapters 8-11, and I'm actively working on more content. As an early access release, it's currently available at a discounted price.
 
 This repository contains the source code for "The Impatient Programmer's Guide to Bevy and Rust: Build a Video Game from Scratch" tutorial series.
 
