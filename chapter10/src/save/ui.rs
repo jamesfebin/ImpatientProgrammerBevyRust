@@ -19,6 +19,7 @@ use crate::characters::collider::Collider;
 use crate::characters::physics::Velocity;
 use crate::characters::state::CharacterState;
 use crate::config::player::PLAYER_SCALE;
+use crate::state::pause::PauseMenu;
 
 
 use super::data::*;
@@ -392,9 +393,19 @@ pub fn execute_load(world: &mut World) {
     for entity in world.query_filtered::<Entity, With<HealthBarOwner>>().iter(world) {
         to_despawn.push(entity);
     }
+    for entity in world.query_filtered::<Entity, With<PauseMenu>>().iter(world) {
+        to_despawn.push(entity);
+    }
+    for entity in world.query_filtered::<Entity, With<SaveLoadUI>>().iter(world) {
+        to_despawn.push(entity);
+    }
     for entity in to_despawn {
         world.despawn(entity);
     }
+
+    // Reset save/load UI state so it doesn't re-render stale UI
+    let mut ui_state = world.resource_mut::<SaveLoadUIState>();
+    ui_state.active = false;
 
     let tilemap_handles = match world.get_resource::<TilemapHandles>() {
         Some(h) => h.clone(),

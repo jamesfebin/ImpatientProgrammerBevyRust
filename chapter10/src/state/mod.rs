@@ -1,7 +1,7 @@
 mod game_over;
 mod game_state;
 mod loading;
-mod pause;
+pub(crate) mod pause;
 pub mod main_menu;
 
 use bevy::prelude::*;
