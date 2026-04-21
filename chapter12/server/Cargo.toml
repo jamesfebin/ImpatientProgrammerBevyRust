@@ -1,0 +1,13 @@
+[package]
+name = "bevy-game-server"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+spacetimedb = "2.0"
+log = "0.4"
+petname = { version = "2.0", default-features = false, features = ["default-words"] }
+getrandom = { version = "0.2", features = ["custom"] }
