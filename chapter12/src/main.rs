@@ -1,25 +1,29 @@
-mod map;
-mod characters;
-mod state; 
-mod collision;
-mod config;
-mod inventory;
-mod camera;
-mod combat;
-mod particles;
-mod enemy;
-mod save;
 mod audio;
+mod camera;
+mod characters;
+mod collision;
+mod combat;
+mod config;
+mod enemy;
+mod inventory;
+mod map;
+mod module_bindings;
+mod network;
+mod particles;
+mod save;
+mod state;
 
 use bevy::{
     prelude::*,
     window::{MonitorSelection, Window, WindowMode, WindowPlugin}, // Line update alert
 };
 
-use bevy_procedural_tilemaps::prelude::*;
 use crate::camera::CameraPlugin;
-use crate::map::generate::{setup_generator, prepare_tilemap_handles_resource, poll_map_generation};
+use crate::map::generate::{
+    poll_map_generation, prepare_tilemap_handles_resource, setup_generator,
+};
 use crate::state::GameState;
+use bevy_procedural_tilemaps::prelude::*;
 
 fn get_assets_path() -> String {
     // Check for assets/ next to the executable first (release builds)
@@ -56,17 +60,26 @@ fn main() {
                 .set(ImagePlugin::default_nearest()),
         )
         .add_plugins(state::StatePlugin)
-        .add_plugins(CameraPlugin) // Add this line
+        .add_plugins(CameraPlugin)
         .add_plugins(inventory::InventoryPlugin)
         .add_plugins(collision::CollisionPlugin)
         .add_plugins(characters::CharactersPlugin)
         .add_plugins(combat::CombatPlugin)
-        .add_plugins(enemy::EnemyPlugin) 
+        .add_plugins(enemy::EnemyPlugin)
         .add_plugins(particles::ParticlesPlugin)
         .add_plugins(save::SavePlugin)
+        .add_plugins(network::NetworkPlugin)
         .add_plugins(audio::AudioManagerPlugin)
         .add_systems(Startup, prepare_tilemap_handles_resource)
-        .add_systems(OnEnter(GameState::Loading), setup_generator)
-        .add_systems(Update, poll_map_generation.run_if(in_state(GameState::Loading)))
+        .add_systems(
+            OnEnter(GameState::Loading),
+            setup_generator.run_if(not(state::in_multiplayer)),
+        )
+        .add_systems(
+            Update,
+            poll_map_generation
+                .run_if(in_state(GameState::Loading))
+                .run_if(not(state::in_multiplayer)),
+        )
         .run();
 }

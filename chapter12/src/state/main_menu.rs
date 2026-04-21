@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 
+use super::{GameMode, GameState};
+use crate::audio::SfxKind;
 use crate::save::SaveLoadUIState;
 use crate::save::ui::SaveLoadMode;
-use crate::audio::SfxKind;
-use super::GameState;
 
 #[derive(Component)]
 pub struct MainMenuScreen;
@@ -12,6 +12,7 @@ pub struct MainMenuScreen;
 pub enum MainMenuButton {
     NewGame,
     LoadGame,
+    Multiplayer,
     Quit,
 }
 
@@ -46,6 +47,7 @@ pub fn spawn_main_menu(mut commands: Commands) {
             let buttons = [
                 (MainMenuButton::NewGame, "New Game"),
                 (MainMenuButton::LoadGame, "Load Game"),
+                (MainMenuButton::Multiplayer, "Multiplayer"),
                 (MainMenuButton::Quit, "Quit"),
             ];
 
@@ -100,11 +102,16 @@ pub fn handle_main_menu_buttons(
 
         match button {
             MainMenuButton::NewGame => {
+                commands.insert_resource(GameMode::SinglePlayer);
                 next_state.set(GameState::Loading);
             }
             MainMenuButton::LoadGame => {
                 ui_state.active = true;
                 ui_state.mode = SaveLoadMode::Load;
+            }
+            MainMenuButton::Multiplayer => {
+                commands.insert_resource(GameMode::Multiplayer);
+                next_state.set(GameState::Loading);
             }
             MainMenuButton::Quit => {
                 exit.write(AppExit::Success);
