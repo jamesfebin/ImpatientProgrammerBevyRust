@@ -2,7 +2,7 @@
 
 <video width="100%" controls src="https://github.com/user-attachments/assets/ab700b79-be21-4f0a-9147-bb6ee4ca1116"></video>
 
-[Read the first 7 chapters free!](https://aibodh.com/books/the-impatient-programmers-guide-to-bevy-and-rust/) The [paid ebook](https://febinjohnjames.gumroad.com/l/the-impatient-programmers-guide-to-bevy-and-rust) includes chapters 8-11, and I'm actively working on more content. As an early access release, it's currently available at a discounted price. [Chapter 12 is also free to read!](https://aibodh.com/posts/bevy-rust-game-development-chapter-12/)
+[Read the first 7 chapters free.](https://aibodh.com/books/the-impatient-programmers-guide-to-bevy-and-rust/) The [paid ebook](https://febinjohnjames.gumroad.com/l/the-impatient-programmers-guide-to-bevy-and-rust) includes chapters 8-11, and I'm actively working on more content. As an early access release, it's currently available at a discounted price. [Chapter 12 is also free to read.](https://aibodh.com/posts/bevy-rust-game-development-chapter-12/)
 
 ## Chapters
 
