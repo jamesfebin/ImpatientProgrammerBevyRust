@@ -1,8 +1,7 @@
 # The Impatient Programmer's Guide to Bevy and Rust
 
-<video width="100%" controls>
-  <source src="assets/book_assets/book_teaser.mp4" type="video/mp4">
-</video>
+<!-- TODO: Replace VIDEO_URL below with the GitHub CDN URL generated after drag-dropping book_teaser.mp4 into the GitHub README editor -->
+<video width="100%" controls src="VIDEO_URL"></video>
 
 [Read the first 7 chapters free!](https://aibodh.com/books/the-impatient-programmers-guide-to-bevy-and-rust/) The [paid ebook](https://febinjohnjames.gumroad.com/l/the-impatient-programmers-guide-to-bevy-and-rust) includes chapters 8-11, and I'm actively working on more content. As an early access release, it's currently available at a discounted price. [Chapter 12 is also free to read!](https://aibodh.com/posts/bevy-rust-game-development-chapter-12/)
 
@@ -61,7 +60,7 @@ Learn how to build multiplayer networking in Bevy with SpacetimeDB.
 Each chapter has its own directory with a complete, runnable project. Navigate to the chapter directory you want to explore and run:
 
 ```bash
-cd chapter1  # or chapter2, chapter3, chapter4, chapter5, chapter6
+cd chapter1  # or chapter2, chapter3, chapter4, chapter5, chapter6, chapter7, chapter12
 cargo run
 ```
 
