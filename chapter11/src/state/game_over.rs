@@ -3,13 +3,13 @@ use bevy::prelude::*;
 
 use crate::characters::input::Player;
 use crate::characters::spawn::PlayerSpawned;
+use crate::collision::{CollisionMap, CollisionMapBuilt, TileMarker};
 use crate::combat::healthbar::HealthBarOwner;
 use crate::combat::systems::{Projectile, ProjectileEffect};
-use crate::enemy::{spawn::EnemiesSpawned, Enemy};
-use crate::particles::components::{Particle, ParticleEmitter};
-use crate::collision::{CollisionMap, TileMarker, CollisionMapBuilt};
+use crate::enemy::{Enemy, spawn::EnemiesSpawned};
 use crate::inventory::Inventory;
 use crate::map::generate::MapReady;
+use crate::particles::components::{Particle, ParticleEmitter};
 
 use super::GameState;
 
@@ -33,18 +33,21 @@ pub fn spawn_game_over_screen(mut commands: Commands) {
             parent.spawn((
                 Text::new("GAME OVER\n\nPress R to restart"),
                 TextFont {
-                    font_size: 48.0,
+                    font_size: FontSize::Px(48.0),
                     ..default()
                 },
                 TextColor(Color::WHITE),
-                TextLayout::new_with_justify(Justify::Center),
+                TextLayout::justify(Justify::Center),
             ));
         });
 
     info!("Game over screen spawned");
 }
 
-pub fn despawn_game_over_screen(mut commands: Commands, query: Query<Entity, With<GameOverScreen>>) {
+pub fn despawn_game_over_screen(
+    mut commands: Commands,
+    query: Query<Entity, With<GameOverScreen>>,
+) {
     for entity in query.iter() {
         commands.entity(entity).despawn();
     }
@@ -75,9 +78,8 @@ pub fn cleanup_game_world(
     mut player_spawned: ResMut<PlayerSpawned>,
     mut enemies_spawned: ResMut<EnemiesSpawned>,
     mut collision_map_built: ResMut<CollisionMapBuilt>,
-    mut inventory: ResMut<Inventory>
+    mut inventory: ResMut<Inventory>,
 ) {
-
     for entity in tiles.iter() {
         commands.entity(entity).despawn();
     }
@@ -110,5 +112,4 @@ pub fn cleanup_game_world(
     commands.remove_resource::<CollisionMap>();
     inventory.set_items(Default::default());
     commands.remove_resource::<MapReady>();
-
 }

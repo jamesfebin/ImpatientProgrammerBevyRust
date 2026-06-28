@@ -122,7 +122,7 @@ pub fn spawn_multiplayer_screen(mut commands: Commands) {
             parent.spawn((
                 Text::new("Multiplayer"),
                 TextFont {
-                    font_size: 48.0,
+                    font_size: FontSize::Px(48.0),
                     ..default()
                 },
                 TextColor(Color::srgb(0.8, 0.7, 1.0)),
@@ -135,7 +135,7 @@ pub fn spawn_multiplayer_screen(mut commands: Commands) {
                 ConnectionStatusText,
                 Text::new("Connecting..."),
                 TextFont {
-                    font_size: 24.0,
+                    font_size: FontSize::Px(24.0),
                     ..default()
                 },
                 TextColor(Color::WHITE),
@@ -148,7 +148,7 @@ pub fn spawn_multiplayer_screen(mut commands: Commands) {
                 OnlinePlayersText,
                 Text::new(""),
                 TextFont {
-                    font_size: 18.0,
+                    font_size: FontSize::Px(18.0),
                     ..default()
                 },
                 TextColor(Color::srgb(0.7, 0.9, 0.7)),
@@ -160,7 +160,7 @@ pub fn spawn_multiplayer_screen(mut commands: Commands) {
             parent.spawn((
                 Text::new("Press Backspace to return to Main Menu"),
                 TextFont {
-                    font_size: 18.0,
+                    font_size: FontSize::Px(18.0),
                     ..default()
                 },
                 TextColor(Color::srgba(0.6, 0.6, 0.6, 0.8)),

@@ -6,7 +6,6 @@ use crate::save::ui::SaveLoadMode;
 use super::GameState;
 use crate::audio::SfxKind;
 
-
 #[derive(Component)]
 pub struct PauseMenu;
 
@@ -37,7 +36,7 @@ pub fn spawn_pause_menu(mut commands: Commands) {
             parent.spawn((
                 Text::new("PAUSED"),
                 TextFont {
-                    font_size: 42.0,
+                    font_size: FontSize::Px(42.0),
                     ..default()
                 },
                 TextColor(Color::WHITE),
@@ -74,7 +73,7 @@ pub fn spawn_pause_menu(mut commands: Commands) {
                         btn_parent.spawn((
                             Text::new(label),
                             TextFont {
-                                font_size: 24.0,
+                                font_size: FontSize::Px(24.0),
                                 ..default()
                             },
                             TextColor(Color::WHITE),

@@ -1,26 +1,25 @@
 use bevy::prelude::*;
 
+use crate::characters::animation::*;
+use crate::characters::collider::Collider;
 use crate::characters::config::{CharacterEntry, CharactersList};
 use crate::characters::facing::Facing;
 use crate::characters::input::Player;
+use crate::characters::physics::Velocity;
 use crate::characters::spawn::{CharactersListResource, CurrentCharacterIndex, PlayerSpawned};
+use crate::characters::state::CharacterState;
 use crate::collision::{CollisionMapBuilt, TileMarker};
 use crate::combat::healthbar::HealthBarOwner;
 use crate::combat::systems::{Projectile, ProjectileEffect};
 use crate::combat::{Health, PlayerCombat};
-use crate::enemy::spawn::EnemiesSpawned;
+use crate::config::player::PLAYER_SCALE;
 use crate::enemy::Enemy;
+use crate::enemy::spawn::EnemiesSpawned;
 use crate::inventory::{Inventory, Pickable};
 use crate::map::assets::TilemapHandles;
 use crate::particles::components::{Particle, ParticleEmitter};
 use crate::state::GameState;
-use crate::characters::animation::*;
-use crate::characters::collider::Collider;
-use crate::characters::physics::Velocity;
-use crate::characters::state::CharacterState;
-use crate::config::player::PLAYER_SCALE;
 use crate::state::pause::PauseMenu;
-
 
 use super::data::*;
 use super::systems;
@@ -103,7 +102,7 @@ pub fn handle_save_load_ui(
             parent.spawn((
                 Text::new(title),
                 TextFont {
-                    font_size: 42.0,
+                    font_size: FontSize::Px(42.0),
                     ..default()
                 },
                 TextColor(Color::WHITE),
@@ -116,11 +115,7 @@ pub fn handle_save_load_ui(
             for slot in 0..MAX_SLOTS {
                 let info = &slot_infos[slot];
                 let label = match info {
-                    Some(meta) => format!(
-                        "Slot {} — {}",
-                        slot + 1,
-                        meta.timestamp,
-                    ),
+                    Some(meta) => format!("Slot {} — {}", slot + 1, meta.timestamp,),
                     None => format!("Slot {} — Empty", slot + 1),
                 };
 
@@ -162,7 +157,7 @@ pub fn handle_save_load_ui(
                     btn_parent.spawn((
                         Text::new(label),
                         TextFont {
-                            font_size: 20.0,
+                            font_size: FontSize::Px(20.0),
                             ..default()
                         },
                         TextColor(text_color),
@@ -188,7 +183,7 @@ pub fn handle_save_load_ui(
                     btn_parent.spawn((
                         Text::new("Back"),
                         TextFont {
-                            font_size: 24.0,
+                            font_size: FontSize::Px(24.0),
                             ..default()
                         },
                         TextColor(Color::WHITE),
@@ -196,7 +191,6 @@ pub fn handle_save_load_ui(
                 });
         });
 }
-
 
 pub fn handle_slot_buttons(
     mut ui_state: ResMut<SaveLoadUIState>,
@@ -214,7 +208,7 @@ pub fn handle_slot_buttons(
         ui_state.active = false;
     }
 }
- 
+
 pub fn handle_back_button(
     mut ui_state: ResMut<SaveLoadUIState>,
     interaction_query: Query<&Interaction, (Changed<Interaction>, With<BackButton>)>,
@@ -284,11 +278,7 @@ pub fn execute_save(
 
     let mut tiles = Vec::new();
     for (tf, sprite, tile_marker, pickable) in tile_query.iter() {
-        let atlas_index = sprite
-            .texture_atlas
-            .as_ref()
-            .map(|a| a.index)
-            .unwrap_or(0);
+        let atlas_index = sprite.texture_atlas.as_ref().map(|a| a.index).unwrap_or(0);
 
         let rot = tf.rotation;
         tiles.push(TileSave {
@@ -301,7 +291,9 @@ pub fn execute_save(
         });
     }
 
-    let timestamp = chrono::Local::now().format("%d %b %Y, %I:%M %p").to_string();
+    let timestamp = chrono::Local::now()
+        .format("%d %b %Y, %I:%M %p")
+        .to_string();
 
     let save_data = SaveData {
         version: SAVE_VERSION,
@@ -332,8 +324,7 @@ fn do_write_save(slot: usize, save_data: &SaveData, timestamp: &str) -> Result<(
 
     let dir = saves_directory();
     std::fs::create_dir_all(&dir).map_err(|e| format!("Create dir error: {}", e))?;
-    std::fs::write(save_file_path(slot), &file_bytes)
-        .map_err(|e| format!("Write error: {}", e))?;
+    std::fs::write(save_file_path(slot), &file_bytes).map_err(|e| format!("Write error: {}", e))?;
 
     let metadata = SaveMetadata {
         timestamp: timestamp.to_string(),
@@ -369,7 +360,10 @@ pub fn execute_load(world: &mut World) {
 
     // Despawn all gameplay entities
     let mut to_despawn = Vec::new();
-    for entity in world.query_filtered::<Entity, With<TileMarker>>().iter(world) {
+    for entity in world
+        .query_filtered::<Entity, With<TileMarker>>()
+        .iter(world)
+    {
         to_despawn.push(entity);
     }
     for entity in world.query_filtered::<Entity, With<Player>>().iter(world) {
@@ -378,25 +372,43 @@ pub fn execute_load(world: &mut World) {
     for entity in world.query_filtered::<Entity, With<Enemy>>().iter(world) {
         to_despawn.push(entity);
     }
-    for entity in world.query_filtered::<Entity, With<Projectile>>().iter(world) {
+    for entity in world
+        .query_filtered::<Entity, With<Projectile>>()
+        .iter(world)
+    {
         to_despawn.push(entity);
     }
-    for entity in world.query_filtered::<Entity, With<ProjectileEffect>>().iter(world) {
+    for entity in world
+        .query_filtered::<Entity, With<ProjectileEffect>>()
+        .iter(world)
+    {
         to_despawn.push(entity);
     }
-    for entity in world.query_filtered::<Entity, With<ParticleEmitter>>().iter(world) {
+    for entity in world
+        .query_filtered::<Entity, With<ParticleEmitter>>()
+        .iter(world)
+    {
         to_despawn.push(entity);
     }
     for entity in world.query_filtered::<Entity, With<Particle>>().iter(world) {
         to_despawn.push(entity);
     }
-    for entity in world.query_filtered::<Entity, With<HealthBarOwner>>().iter(world) {
+    for entity in world
+        .query_filtered::<Entity, With<HealthBarOwner>>()
+        .iter(world)
+    {
         to_despawn.push(entity);
     }
-    for entity in world.query_filtered::<Entity, With<PauseMenu>>().iter(world) {
+    for entity in world
+        .query_filtered::<Entity, With<PauseMenu>>()
+        .iter(world)
+    {
         to_despawn.push(entity);
     }
-    for entity in world.query_filtered::<Entity, With<SaveLoadUI>>().iter(world) {
+    for entity in world
+        .query_filtered::<Entity, With<SaveLoadUI>>()
+        .iter(world)
+    {
         to_despawn.push(entity);
     }
     for entity in to_despawn {
@@ -453,7 +465,9 @@ pub fn execute_load(world: &mut World) {
 
     // Spawn player
     let player_data = &save_data.player;
-    let char_idx = player_data.character_index.min(characters_list.characters.len() - 1);
+    let char_idx = player_data
+        .character_index
+        .min(characters_list.characters.len() - 1);
     let character_entry = characters_list.characters[char_idx].clone();
 
     let max_row = character_entry.calculate_max_animation_row();

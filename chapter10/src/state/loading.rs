@@ -11,28 +11,30 @@ pub struct LoadingScreen;
 pub struct LoadingText;
 
 pub fn spawn_loading_screen(mut commands: Commands) {
-    commands.spawn((
-        LoadingScreen,
-        Node {
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
-            justify_content: JustifyContent::Center,
-            align_items: AlignItems::Center,
-            ..default()
-        },
-        BackgroundColor(Color::srgb(0.1, 0.1, 0.15)),
-    )).with_children(|parent| {
-        parent.spawn((
-            LoadingText,
-            Text::new("Loading..."),
-            TextFont {
-                font_size: 48.0,
+    commands
+        .spawn((
+            LoadingScreen,
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
                 ..default()
             },
-            TextColor(Color::WHITE),
-        ));
-    });
-    
+            BackgroundColor(Color::srgb(0.1, 0.1, 0.15)),
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                LoadingText,
+                Text::new("Loading..."),
+                TextFont {
+                    font_size: FontSize::Px(48.0),
+                    ..default()
+                },
+                TextColor(Color::WHITE),
+            ));
+        });
+
     info!("Loading screen spawned");
 }
 
@@ -56,13 +58,10 @@ pub fn animate_loading(
     }
 }
 
-pub fn despawn_loading_screen(
-    mut commands: Commands,
-    query: Query<Entity, With<LoadingScreen>>,
-) {
+pub fn despawn_loading_screen(mut commands: Commands, query: Query<Entity, With<LoadingScreen>>) {
     for entity in query.iter() {
         commands.entity(entity).despawn();
     }
-    
+
     info!("Loading screen despawned");
 }

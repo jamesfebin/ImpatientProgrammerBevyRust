@@ -1,5 +1,5 @@
-use bevy::prelude::*;
 use super::health::Health;
+use bevy::prelude::*;
 
 const HEALTHBAR_WIDTH: f32 = 50.0;
 const HEALTHBAR_HEIGHT: f32 = 6.0;
@@ -25,8 +25,16 @@ pub fn spawn_healthbars(
 ) {
     for (owner, transform, health) in &new_health {
         let pos = transform.translation();
-        let bg_pos = Vec3::new(pos.x, pos.y + HEALTHBAR_Y_OFFSET, pos.z + HEALTHBAR_Z_OFFSET);
-        let fg_pos = Vec3::new(pos.x, pos.y + HEALTHBAR_Y_OFFSET, pos.z + HEALTHBAR_Z_OFFSET + HEALTHBAR_FG_Z_BUMP);
+        let bg_pos = Vec3::new(
+            pos.x,
+            pos.y + HEALTHBAR_Y_OFFSET,
+            pos.z + HEALTHBAR_Z_OFFSET,
+        );
+        let fg_pos = Vec3::new(
+            pos.x,
+            pos.y + HEALTHBAR_Y_OFFSET,
+            pos.z + HEALTHBAR_Z_OFFSET + HEALTHBAR_FG_Z_BUMP,
+        );
 
         // Background: dark gray
         let bg_mesh = meshes.add(Rectangle::new(HEALTHBAR_WIDTH, HEALTHBAR_HEIGHT));
@@ -51,7 +59,6 @@ pub fn spawn_healthbars(
         ));
     }
 }
-
 
 /// Despawns bars whose owner no longer exists.
 pub fn update_healthbars(
@@ -79,7 +86,7 @@ pub fn update_healthbars(
         if is_foreground {
             // Scale foreground width to match health ratio
             transform.scale.x = ratio.max(0.001);
-            
+
             // Reposition foreground to stay left-aligned as it shrinks
             // (Scaling happens from center, so we need to offset position)
             transform.translation = Vec3::new(
@@ -87,9 +94,9 @@ pub fn update_healthbars(
                 owner_pos.y + HEALTHBAR_Y_OFFSET,
                 owner_pos.z + HEALTHBAR_Z_OFFSET + HEALTHBAR_FG_Z_BUMP,
             );
-            
+
             // Update color (Green -> Yellow -> Red)
-            if let Some(mat) = materials.get_mut(&mat_handle.0) {
+            if let Some(mut mat) = materials.get_mut(&mat_handle.0) {
                 mat.color = health_color(ratio);
             }
         } else {

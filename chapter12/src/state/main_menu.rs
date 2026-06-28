@@ -34,7 +34,7 @@ pub fn spawn_main_menu(mut commands: Commands) {
             parent.spawn((
                 Text::new("Main Menu"),
                 TextFont {
-                    font_size: 64.0,
+                    font_size: FontSize::Px(64.0),
                     ..default()
                 },
                 TextColor(Color::srgb(0.8, 0.7, 1.0)),
@@ -70,7 +70,7 @@ pub fn spawn_main_menu(mut commands: Commands) {
                         btn_parent.spawn((
                             Text::new(label),
                             TextFont {
-                                font_size: 28.0,
+                                font_size: FontSize::Px(28.0),
                                 ..default()
                             },
                             TextColor(Color::WHITE),

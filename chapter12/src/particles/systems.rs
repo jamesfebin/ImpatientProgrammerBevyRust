@@ -189,7 +189,7 @@ pub fn update_particles(
         transform.scale = Vec3::splat(current_scale);
 
         // Update material color
-        if let Some(material) = materials.get_mut(&material_handle.0) {
+        if let Some(mut material) = materials.get_mut(&material_handle.0) {
             material.color = current_color.to_linear();
         }
     }
