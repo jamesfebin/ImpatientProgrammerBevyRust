@@ -18,11 +18,11 @@ pub fn spawn_pause_menu(mut commands: Commands) {
         parent.spawn((
             Text::new("PAUSED\n\nPress ESC to resume"),
             TextFont {
-                font_size: 36.0,
+                font_size: FontSize::Px(36.0),
                 ..default()
             },
             TextColor(Color::WHITE),
-            TextLayout::new_with_justify(Justify::Center),
+            TextLayout::justify(Justify::Center),
         ));
     });
     
