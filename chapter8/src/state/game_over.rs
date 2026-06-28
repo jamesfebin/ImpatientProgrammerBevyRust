@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use crate::characters::spawn::PlayerSpawned;
 use crate::combat::healthbar::HealthBarOwner;
 use crate::combat::systems::{Projectile, ProjectileEffect};
-use crate::enemy::{spawn::EnemiesSpawned, Enemy};
+use crate::enemy::{Enemy, spawn::EnemiesSpawned};
 use crate::particles::components::{Particle, ParticleEmitter};
 
 use super::GameState;
@@ -29,18 +29,21 @@ pub fn spawn_game_over_screen(mut commands: Commands) {
             parent.spawn((
                 Text::new("GAME OVER\n\nPress R to restart"),
                 TextFont {
-                    font_size: 48.0,
+                    font_size: FontSize::Px(48.0),
                     ..default()
                 },
                 TextColor(Color::WHITE),
-                TextLayout::new_with_justify(Justify::Center),
+                TextLayout::justify(Justify::Center),
             ));
         });
 
     info!("Game over screen spawned");
 }
 
-pub fn despawn_game_over_screen(mut commands: Commands, query: Query<Entity, With<GameOverScreen>>) {
+pub fn despawn_game_over_screen(
+    mut commands: Commands,
+    query: Query<Entity, With<GameOverScreen>>,
+) {
     for entity in query.iter() {
         commands.entity(entity).despawn();
     }
@@ -92,5 +95,4 @@ pub fn cleanup_game_world(
 
     player_spawned.0 = false;
     enemies_spawned.0 = false;
-
 }
