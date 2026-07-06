@@ -2,7 +2,7 @@
 
 <video width="100%" controls src="https://github.com/user-attachments/assets/ab700b79-be21-4f0a-9147-bb6ee4ca1116"></video>
 
-[Read the first 7 chapters free.](https://aibodh.com/books/the-impatient-programmers-guide-to-bevy-and-rust/) The [paid ebook](https://febinjohnjames.gumroad.com/l/the-impatient-programmers-guide-to-bevy-and-rust) includes chapters 8-11, and I'm actively working on more content. As an early access release, it's currently available at a discounted price. [Chapter 12 is also free to read.](https://aibodh.com/posts/bevy-rust-game-development-chapter-12/)
+[Read the first 7 chapters free.](https://aibodh.com/books/the-impatient-programmers-guide-to-bevy-and-rust/) The [paid ebook](https://febinjohnjames.gumroad.com/l/the-impatient-programmers-guide-to-bevy-and-rust) includes chapters 8-13, and I'm actively working on more content. As an early access release, it's currently available at a discounted price. [Chapter 12 is also free to read.](https://aibodh.com/posts/bevy-rust-game-development-chapter-12/)
 
 ## Chapters
 
@@ -53,6 +53,10 @@ Learn how to add background music and sound effects to your Bevy game.
 ### [Chapter 12: Let There Be Networking](https://aibodh.com/posts/bevy-rust-game-development-chapter-12/)
 
 Learn how to build multiplayer networking in Bevy with SpacetimeDB.
+
+### [Chapter 13: Let There Be a Shared World](https://febinjohnjames.gumroad.com/l/the-impatient-programmers-guide-to-bevy-and-rust)
+
+Learn how to make every multiplayer client generate the exact same procedural world using a server-owned seed.
 
 ## Getting Started
 
