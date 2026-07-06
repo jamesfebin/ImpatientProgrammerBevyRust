@@ -23,8 +23,8 @@ pub struct AnimationClip {
 }
 
 impl AnimationClip {
-    pub fn new(row: usize, frame_count: usize, atlas_columns: usize) -> Self {
-        let first = row * atlas_columns;
+    pub fn new(row: usize, column_offset: usize, frame_count: usize, atlas_columns: usize) -> Self {
+        let first = (row * atlas_columns) + column_offset;
         Self {
             first,
             last: first + frame_count - 1,
@@ -67,7 +67,7 @@ impl AnimationController {
             def.start_row
         };
         
-        Some(AnimationClip::new(row, def.frame_count, config.atlas_columns))
+        Some(AnimationClip::new(row, def.start_column, def.frame_count, config.atlas_columns))
     }
 }
 
