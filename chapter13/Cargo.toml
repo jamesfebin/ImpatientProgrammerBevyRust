@@ -1,0 +1,22 @@
+[package]
+name = "chapter13"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = { version = "0.19", features = ["mp3", "wav"] }
+bevy_procedural_tilemaps = "0.4"
+bevy_common_assets = { version = "0.17", features = ["ron"] }
+serde = { version = "1.0", features = ["derive"] }
+rand = "0.8"
+pathfinding = "4.9"
+bincode = "1.3"
+chrono = { version = "0.4", features = ["serde"] }
+spacetimedb-sdk = "2.1.0"
+
+[profile.dev]
+opt-level = 1
+
+# Enable a large amount of optimization in the dev profile for dependencies
+[profile.dev.package."*"]
+opt-level = 3
