@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = "0.19"
+bevy = "0.20"
 
 # Enable a small amount of optimization in the dev profile.
 [profile.dev]

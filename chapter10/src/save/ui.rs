@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{picking::hover::Hovered, prelude::*, ui::{InteractionDisabled, Pressed}, ui_widgets::Button};
 
 use crate::characters::animation::*;
 use crate::characters::collider::Collider;
@@ -138,6 +138,7 @@ pub fn handle_save_load_ui(
                 let mut btn = parent.spawn((
                     SlotButton(slot),
                     Button,
+                    Hovered::default(),
                     Node {
                         width: Val::Px(500.0),
                         height: Val::Px(50.0),
@@ -150,7 +151,7 @@ pub fn handle_save_load_ui(
                 ));
 
                 if disabled {
-                    btn.remove::<Button>();
+                    btn.insert(InteractionDisabled);
                 }
 
                 btn.with_children(|btn_parent| {
@@ -169,6 +170,7 @@ pub fn handle_save_load_ui(
                 .spawn((
                     BackButton,
                     Button,
+                    Hovered::default(),
                     Node {
                         width: Val::Px(200.0),
                         height: Val::Px(45.0),
@@ -195,12 +197,9 @@ pub fn handle_save_load_ui(
 pub fn handle_slot_buttons(
     mut ui_state: ResMut<SaveLoadUIState>,
     mut pending: ResMut<PendingSaveLoadAction>,
-    interaction_query: Query<(&Interaction, &SlotButton), Changed<Interaction>>,
+    button_query: Query<&SlotButton, (Added<Pressed>, Without<InteractionDisabled>)>,
 ) {
-    for (interaction, slot_btn) in interaction_query.iter() {
-        if *interaction != Interaction::Pressed {
-            continue;
-        }
+    for slot_btn in button_query.iter() {
         // Button was just clicked!
         // 1. Record what needs to happen (Save or Load this slot)
         pending.0 = Some((ui_state.mode, slot_btn.0));
@@ -211,7 +210,7 @@ pub fn handle_slot_buttons(
 
 pub fn handle_back_button(
     mut ui_state: ResMut<SaveLoadUIState>,
-    interaction_query: Query<&Interaction, (Changed<Interaction>, With<BackButton>)>,
+    button_query: Query<Entity, (Added<Pressed>, With<BackButton>)>,
     input: Res<ButtonInput<KeyCode>>,
 ) {
     // Close on ESC
@@ -220,10 +219,8 @@ pub fn handle_back_button(
         return;
     }
     // Close on Back button click
-    for interaction in interaction_query.iter() {
-        if *interaction == Interaction::Pressed {
-            ui_state.active = false;
-        }
+    if !button_query.is_empty() {
+        ui_state.active = false;
     }
 }
 

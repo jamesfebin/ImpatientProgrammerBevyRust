@@ -1,9 +1,9 @@
-// src/assets/shaders/particle_glow.wgsl
+// src/assets/shaders/particle_glow.wesl
 // Custom shader for particles
 // Creates a radial gradient glow effect with additive blending
-#import bevy_sprite::mesh2d_vertex_output::VertexOutput
+import bevy_sprite_render::mesh2d::vertex_output::VertexOutput;
 
-@group(#{MATERIAL_BIND_GROUP}) @binding(0) var<uniform> color: vec4<f32>;
+@group(constants::MATERIAL_BIND_GROUP) @binding(0) var<uniform> color: vec4<f32>;
 
 @fragment
 fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {

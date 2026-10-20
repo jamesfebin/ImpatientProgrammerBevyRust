@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{picking::hover::Hovered, prelude::*, ui::{Pressed}, ui_widgets::Button};
 
 use super::{GameMode, GameState};
 use crate::audio::SfxKind;
@@ -56,6 +56,7 @@ pub fn spawn_main_menu(mut commands: Commands) {
                     .spawn((
                         btn_type,
                         Button,
+                        Hovered::default(),
                         Node {
                             width: Val::Px(300.0),
                             height: Val::Px(55.0),
@@ -90,13 +91,10 @@ pub fn handle_main_menu_buttons(
     mut commands: Commands,
     mut next_state: ResMut<NextState<GameState>>,
     mut ui_state: ResMut<SaveLoadUIState>,
-    interaction_query: Query<(&Interaction, &MainMenuButton), Changed<Interaction>>,
+    button_query: Query<&MainMenuButton, Added<Pressed>>,
     mut exit: MessageWriter<AppExit>,
 ) {
-    for (interaction, button) in interaction_query.iter() {
-        if *interaction != Interaction::Pressed {
-            continue;
-        }
+    for button in button_query.iter() {
 
         commands.trigger(SfxKind::ButtonClick);
 
@@ -122,15 +120,15 @@ pub fn handle_main_menu_buttons(
 
 pub fn handle_main_menu_hover(
     mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor),
-        (Changed<Interaction>, With<MainMenuButton>),
+        (&Hovered, Has<Pressed>, &mut BackgroundColor),
+        With<MainMenuButton>,
     >,
 ) {
-    for (interaction, mut bg) in interaction_query.iter_mut() {
-        *bg = match interaction {
-            Interaction::Hovered => BackgroundColor(Color::srgba(0.25, 0.25, 0.5, 0.9)),
-            Interaction::Pressed => BackgroundColor(Color::srgba(0.35, 0.35, 0.6, 0.9)),
-            Interaction::None => BackgroundColor(Color::srgba(0.15, 0.15, 0.3, 0.9)),
+    for (hovered, pressed, mut bg) in interaction_query.iter_mut() {
+        *bg = match (hovered.get(), pressed) {
+            (_, true) => BackgroundColor(Color::srgba(0.35, 0.35, 0.6, 0.9)),
+            (true, false) => BackgroundColor(Color::srgba(0.25, 0.25, 0.5, 0.9)),
+            (false, false) => BackgroundColor(Color::srgba(0.15, 0.15, 0.3, 0.9)),
         };
     }
 }

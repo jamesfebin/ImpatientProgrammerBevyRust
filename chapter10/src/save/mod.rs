@@ -16,19 +16,19 @@ impl Plugin for SavePlugin {
             .add_systems(
                 Update,
                 ui::handle_save_load_ui
-                    .run_if(in_state(GameState::Paused).or(in_state(GameState::MainMenu))),
+                    .run_if(in_state(GameState::Paused).or_else(in_state(GameState::MainMenu))),
             )
             .add_systems(
                 Update,
                 ui::handle_slot_buttons
                     .run_if(|ui_state: Res<SaveLoadUIState>| ui_state.active)
-                    .run_if(in_state(GameState::Paused).or(in_state(GameState::MainMenu))),
+                    .run_if(in_state(GameState::Paused).or_else(in_state(GameState::MainMenu))),
             )
             .add_systems(
                 Update,
                 ui::handle_back_button
                     .run_if(|ui_state: Res<SaveLoadUIState>| ui_state.active)
-                    .run_if(in_state(GameState::Paused).or(in_state(GameState::MainMenu))),
+                    .run_if(in_state(GameState::Paused).or_else(in_state(GameState::MainMenu))),
             )
             .add_systems(
                 Update,

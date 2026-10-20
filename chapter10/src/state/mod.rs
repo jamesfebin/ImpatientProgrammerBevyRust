@@ -57,7 +57,7 @@ impl Plugin for StatePlugin {
             )
             // Pause toggle (works in Playing or Paused states)
             .add_systems(Update, 
-                toggle_pause.run_if(in_state(GameState::Playing).or(in_state(GameState::Paused)))
+                toggle_pause.run_if(in_state(GameState::Playing).or_else(in_state(GameState::Paused)))
             )
             .add_systems(OnEnter(GameState::GameOver), game_over::spawn_game_over_screen)
             .add_systems(

@@ -60,17 +60,19 @@ Learn how to make every multiplayer client generate the exact same procedural wo
 
 ## Getting Started
 
+Chapters 1–13 use Bevy 0.20 and require Rust 1.97.1 or newer. Install the toolchain with `rustup toolchain install 1.97.1`. Chapter 14 is still in progress and is excluded from this migration.
+
 Each chapter has its own directory with a complete, runnable project. Navigate to the chapter directory you want to explore and run:
 
 ```bash
 cd chapter1  # or chapter2, chapter3, chapter4, chapter5, chapter6, chapter7, chapter12
-cargo run
+cargo +1.97.1 run
 ```
 
 Note for Linux users on Wayland: if you see rendering artifacts, run the app with the X11 backend:
 
 ```bash
-WINIT_UNIX_BACKEND=x11 WAYLAND_DISPLAY= cargo run
+WINIT_UNIX_BACKEND=x11 WAYLAND_DISPLAY= cargo +1.97.1 run
 ```
 
 > **Community Tip**: This optimization was pointed out by one of our [community members](https://github.com/jamesfebin/ImpatientProgrammerBevyRust/issues/1), thank you for helping make this tutorial better!

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::sync::atomic::Ordering;
 
-use bevy::prelude::*;
+use bevy::{picking::hover::Hovered, prelude::*, ui::{Pressed}, ui_widgets::Button};
 use spacetimedb_sdk::{DbContext, Table};
 
 use super::SpacetimeConnection;
@@ -176,6 +176,7 @@ pub fn spawn_multiplayer_screen(mut commands: Commands) {
                 .spawn((
                     JoinButton,
                     Button,
+                    Hovered::default(),
                     Node {
                         display: Display::None,
                         width: Val::Px(220.0),
@@ -226,13 +227,10 @@ pub fn update_join_button(
 
 pub fn handle_join_button(
     mut commands: Commands,
-    interaction_query: Query<&Interaction, (Changed<Interaction>, With<JoinButton>)>,
+    button_query: Query<Entity, (Added<Pressed>, With<JoinButton>)>,
     pending: Option<Res<PendingWorldSeed>>,
 ) {
-    for interaction in interaction_query.iter() {
-        if *interaction != Interaction::Pressed {
-            continue;
-        }
+    for _ in button_query.iter() {
         let Some(pending) = pending.as_ref() else {
             continue;
         };
@@ -244,15 +242,15 @@ pub fn handle_join_button(
 
 pub fn handle_join_button_hover(
     mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor),
-        (Changed<Interaction>, With<JoinButton>),
+        (&Hovered, Has<Pressed>, &mut BackgroundColor),
+        With<JoinButton>,
     >,
 ) {
-    for (interaction, mut bg) in interaction_query.iter_mut() {
-        *bg = match interaction {
-            Interaction::Hovered => BackgroundColor(Color::srgba(0.25, 0.45, 0.25, 0.9)),
-            Interaction::Pressed => BackgroundColor(Color::srgba(0.35, 0.6, 0.35, 0.9)),
-            Interaction::None => BackgroundColor(Color::srgba(0.15, 0.3, 0.15, 0.9)),
+    for (hovered, pressed, mut bg) in interaction_query.iter_mut() {
+        *bg = match (hovered.get(), pressed) {
+            (_, true) => BackgroundColor(Color::srgba(0.35, 0.6, 0.35, 0.9)),
+            (true, false) => BackgroundColor(Color::srgba(0.25, 0.45, 0.25, 0.9)),
+            (false, false) => BackgroundColor(Color::srgba(0.15, 0.3, 0.15, 0.9)),
         };
     }
 }

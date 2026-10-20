@@ -6,7 +6,7 @@ use bevy::{
         RenderPipelineDescriptor, SpecializedMeshPipelineError,
     },
     shader::ShaderRef,
-    sprite_render::{AlphaMode2d, Material2d, Material2dKey},
+    sprite_render::{AlphaMode2d, Material2d, Material2dKey, Material2dPipeline},
     mesh::MeshVertexBufferLayoutRef,
 };
 
@@ -27,7 +27,7 @@ impl ParticleMaterial {
 
 impl Material2d for ParticleMaterial {
     fn fragment_shader() -> ShaderRef {
-        "shaders/particle_glow.wgsl".into()
+        "shaders/particle_glow.wesl".into()
     }
 
     fn alpha_mode(&self) -> AlphaMode2d {
@@ -35,6 +35,7 @@ impl Material2d for ParticleMaterial {
     }
 
     fn specialize(
+        _pipeline: &Material2dPipeline,
         descriptor: &mut RenderPipelineDescriptor,
         _layout: &MeshVertexBufferLayoutRef,
         _key: Material2dKey<Self>,
